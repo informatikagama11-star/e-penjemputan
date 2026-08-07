@@ -22,7 +22,7 @@
                 <i class="fa-solid me-2 fa-school-flag text-2xl text-amber-300"></i>
                 <div>
                     <h1 class="font-bold text-lg leading-tight">PenjemputanSiswaPro</h1>
-                    <p class="text-xs text-indigo-200">Sistem Otomasi Notifikasi Penjemputan WA</p>
+                    <p class="text-xs text-indigo-200">Sistem Otomasi Notifikasi Penjemputan WA Wali Kelas</p>
                 </div>
             </div>
 
@@ -211,11 +211,16 @@
             <!-- Info Status WA Link & Petugas -->
             <div class="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-2xl p-5 text-white shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <span class="inline-block bg-white/20 text-white text-xs px-2.5 py-1 rounded-full font-semibold mb-2">
-                        <i class="fa-brands fa-whatsapp text-emerald-200 mr-1"></i> Status Terhubung WA Web
-                    </span>
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="inline-block bg-white/20 text-white text-xs px-2.5 py-1 rounded-full font-semibold">
+                            <i class="fa-brands fa-whatsapp text-emerald-200 mr-1"></i> Integrasi WhatsApp Terhubung
+                        </span>
+                        <span id="firebase-status-badge" class="inline-block bg-emerald-400 text-emerald-950 text-xs px-2.5 py-1 rounded-full font-bold">
+                            <i class="fa-solid fa-cloud mr-1"></i> Firebase Online
+                        </span>
+                    </div>
                     <h2 class="text-xl font-bold">Stasiun Scan Penjemputan Piket</h2>
-                    <p class="text-xs text-emerald-100 mt-1">Pastikan WhatsApp Web atau WhatsApp Desktop sudah terbuka di Google Chrome/Windows kamu.</p>
+                    <p class="text-xs text-emerald-100 mt-1">Pilih aplikasi target pengirim pesan WhatsApp ke Wali Kelas saat pindaian NIS berhasil.</p>
                 </div>
                 <div class="bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl text-xs flex items-center gap-3">
                     <i class="fa-solid fa-headset text-2xl text-emerald-300"></i>
@@ -226,13 +231,31 @@
                 </div>
             </div>
 
+            <!-- WA METHOD SELECTION CARD -->
+            <div class="bg-white p-4 rounded-2xl border shadow-sm flex flex-col md:flex-row items-center justify-between gap-4 text-xs">
+                <div class="flex items-center gap-3">
+                    <i class="fa-brands fa-whatsapp text-3xl text-emerald-500"></i>
+                    <div>
+                        <p class="font-bold text-slate-800 text-sm">Target Pengiriman WhatsApp</p>
+                        <p class="text-slate-500">Pilih aplikasi terinstall di komputer/laptop untuk mengirim notifikasi.</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 w-full md:w-auto">
+                    <select id="wa-method-select" onchange="changeWaMethod(this.value)" class="bg-slate-50 border border-slate-300 text-slate-800 font-semibold rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full md:w-auto">
+                        <option value="app">1. Aplikasi WhatsApp Windows Desktop (Buka App WA Langsung)</option>
+                        <option value="api">2. WhatsApp Web Browser (api.whatsapp.com - Cepat & Stabil)</option>
+                        <option value="web">3. WhatsApp Web Link Standard (web.whatsapp.com)</option>
+                    </select>
+                </div>
+            </div>
+
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 <!-- Barcode Scanner Box -->
                 <div class="lg:col-span-5 space-y-4">
                     <div class="bg-white p-5 rounded-2xl shadow-sm border">
                         <h3 class="font-bold text-slate-800 mb-3 flex items-center justify-between">
                             <span><i class="fa-solid fa-barcode text-indigo-600 mr-2"></i>Pindai QR / Barcode NIS</span>
-                            <span class="text-xs bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded font-medium">Auto Send WA</span>
+                            <span id="badge-wa-mode" class="text-xs bg-emerald-50 text-emerald-600 border border-emerald-200 px-2.5 py-0.5 rounded-full font-bold">App WA Windows</span>
                         </h3>
                         
                         <!-- Camera Preview -->
@@ -250,11 +273,11 @@
                     </div>
 
                     <!-- Auto-Forwarding Notice -->
-                    <div class="bg-indigo-50 border border-indigo-200 p-4 rounded-2xl text-xs text-indigo-900 flex items-start space-x-3">
-                        <i class="fa-solid fa-circle-info text-indigo-600 text-lg mt-0.5"></i>
+                    <div id="wa-notice-box" class="bg-emerald-50 border border-emerald-200 p-4 rounded-2xl text-xs text-emerald-900 flex items-start space-x-3">
+                        <i class="fa-brands fa-windows text-emerald-600 text-xl mt-0.5"></i>
                         <div>
-                            <p class="font-bold">Proses Otomatis Sekali Scan:</p>
-                            <p class="mt-0.5 text-indigo-700">Setiap scan NIS berhasil, notifikasi WA penjemputan akan otomatis dikirimkan ke nomor WhatsApp Wali Kelas terkait secara instan tanpa perlu scan berulang.</p>
+                            <p class="font-bold">Mode WhatsApp App Windows Aktif:</p>
+                            <p class="mt-0.5 text-emerald-700">Setiap kali NIS dipindai, aplikasi WhatsApp bawaan Windows di PC akan terbuka otomatis dan menyiapkan pesan langsung ke nomor Wali Kelas terkait!</p>
                         </div>
                     </div>
                 </div>
@@ -263,7 +286,7 @@
                 <div class="lg:col-span-7 space-y-4">
                     <div class="bg-white p-5 rounded-2xl shadow-sm border">
                         <div class="flex justify-between items-center mb-4">
-                            <h3 class="font-bold text-slate-800"><i class="fa-solid fa-clock-rotate-left text-indigo-600 mr-2"></i>Riwayat & Antrean Penjemputan Hari Ini</h3>
+                            <h3 class="font-bold text-slate-800"><i class="fa-solid fa-clock-rotate-left text-indigo-600 mr-2"></i>Riwayat Penjemputan Realtime (Firestore)</h3>
                             <button onclick="clearTodayLog()" class="text-xs text-red-500 hover:underline"><i class="fa-solid fa-trash mr-1"></i>Bersihkan</button>
                         </div>
 
@@ -275,7 +298,7 @@
                                         <th class="p-3">NIS</th>
                                         <th class="p-3">Nama Siswa</th>
                                         <th class="p-3">Kelas</th>
-                                        <th class="p-3">Status WA Wali Kelas</th>
+                                        <th class="p-3">Kirim WA Wali Kelas</th>
                                     </tr>
                                 </thead>
                                 <tbody id="tbody-log-penjemputan" class="divide-y text-slate-700">
@@ -318,10 +341,39 @@
 
     <!-- Footer -->
     <footer class="bg-white border-t py-4 text-center text-xs text-slate-500 mt-auto">
-        <p>&copy; 2026 Aplikasi Penjemputan Siswa Terintegrasi WhatsApp. Realtime Cloud Data.</p>
+        <p>&copy; 2026 Aplikasi Penjemputan Siswa Terintegrasi WhatsApp & Firebase Realtime.</p>
     </footer>
 
-    <!-- MODAL POPUPS -->
+    <!-- MODAL CONFIRMATION DIALOG UNTUK KIRIM WA INSTAN -->
+    <div id="modal-wa-confirm" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl text-center space-y-4 animate-bounce-short">
+            <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
+                <i class="fa-brands fa-whatsapp text-4xl"></i>
+            </div>
+            <div>
+                <span class="text-xs bg-emerald-100 text-emerald-800 font-bold px-2.5 py-0.5 rounded-full">Siswa Teridentifikasi</span>
+                <h3 id="wa-confirm-nama" class="font-bold text-xl text-slate-800 mt-2">Nama Siswa</h3>
+                <p id="wa-confirm-detail" class="text-xs text-slate-500 mt-1">NIS: - | Kelas: -</p>
+            </div>
+
+            <div class="bg-slate-50 border rounded-xl p-3 text-left space-y-1">
+                <p class="text-[11px] text-slate-400 font-bold uppercase">Tujuan Pesan (Wali Kelas):</p>
+                <p id="wa-confirm-walikelas" class="font-bold text-slate-700 text-xs">-</p>
+                <p id="wa-confirm-hp" class="text-xs text-emerald-600 font-mono font-bold">-</p>
+            </div>
+
+            <div class="space-y-2 pt-2">
+                <a id="btn-trigger-wa-desktop" href="#" target="_blank" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow-lg transition flex justify-center items-center gap-2 text-sm">
+                    <i class="fa-brands fa-whatsapp text-lg"></i> Buka & Kirim Pesan WA Sekarang
+                </a>
+                <button onclick="closeModal('modal-wa-confirm')" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold py-2 rounded-xl text-xs">
+                    Tutup / Lanjut Scan Berikutnya
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL POPUPS LAINNYA -->
 
     <!-- Modal Tambah/Edit Siswa -->
     <div id="modal-siswa" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -412,13 +464,31 @@
     </div>
 
 
-    <!-- APP APPLICATION LOGIC JS -->
-    <script>
-        // Default Mock State Data
-        let appData = {
+    <!-- FIREBASE SERVICES & APP LOGIC JS -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Firebase Configuration Setup
+        const firebaseConfig = typeof __firebase_config !== 'undefined' 
+            ? JSON.parse(__firebase_config) 
+            : { apiKey: "demo", authDomain: "demo.firebaseapp.com", projectId: "demo" };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'aplikasi-penjemputan-sekolah';
+
+        // Firestore Paths helper
+        const getPublicCollection = (colName) => collection(db, 'artifacts', appId, 'public', 'data', colName);
+        const getPublicDoc = (colName, docId) => doc(db, 'artifacts', appId, 'public', 'data', colName, docId);
+
+        // State Data local mirror
+        window.appData = {
             users: [
-                { id: '1', username: 'admin', password: '123', name: 'Master Admin', role: 'admin' },
-                { id: '2', username: 'piket1', password: '123', name: 'Petugas Piket A', role: 'piket' }
+                { id: 'admin', username: 'admin', password: '123', name: 'Master Admin', role: 'admin' },
+                { id: 'piket1', username: 'piket1', password: '123', name: 'Petugas Piket A', role: 'piket' }
             ],
             kelas: [
                 { id: '10A', nama: '10 IPA 1', walikelas: 'Siti Aminah, S.Pd', hp: '6281234567890' },
@@ -432,29 +502,166 @@
             logs: []
         };
 
-        // Current Session State
+        let authUser = null;
+
+        // Initialize Firebase Authentication & Realtime Listeners
+        window.addEventListener('DOMContentLoaded', async () => {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (err) {
+                console.warn("Auth Fallback:", err);
+            }
+
+            onAuthStateChanged(auth, (user) => {
+                authUser = user;
+                if (user) {
+                    setupRealtimeListeners();
+                }
+            });
+        });
+
+        // Setup Firestore Realtime Listeners
+        function setupRealtimeListeners() {
+            if (!authUser) return;
+
+            // 1. Realtime Siswa
+            onSnapshot(getPublicCollection('siswa'), (snapshot) => {
+                if (!snapshot.empty) {
+                    window.appData.siswa = [];
+                    snapshot.forEach(docSnap => window.appData.siswa.push(docSnap.data()));
+                } else {
+                    // Initialize Default Seed to Firestore if empty
+                    window.appData.siswa.forEach(s => setDoc(getPublicDoc('siswa', s.nis), s));
+                }
+                renderTableSiswa();
+            }, err => console.error("Error Firestore Siswa:", err));
+
+            // 2. Realtime Kelas
+            onSnapshot(getPublicCollection('kelas'), (snapshot) => {
+                if (!snapshot.empty) {
+                    window.appData.kelas = [];
+                    snapshot.forEach(docSnap => window.appData.kelas.push(docSnap.data()));
+                } else {
+                    window.appData.kelas.forEach(k => setDoc(getPublicDoc('kelas', k.id), k));
+                }
+                renderTableKelas();
+                renderTableSiswa();
+            }, err => console.error("Error Firestore Kelas:", err));
+
+            // 3. Realtime Users
+            onSnapshot(getPublicCollection('users'), (snapshot) => {
+                if (!snapshot.empty) {
+                    window.appData.users = [];
+                    snapshot.forEach(docSnap => window.appData.users.push(docSnap.data()));
+                } else {
+                    window.appData.users.forEach(u => setDoc(getPublicDoc('users', u.id), u));
+                }
+                renderTableUsers();
+            }, err => console.error("Error Firestore Users:", err));
+
+            // 4. Realtime Logs
+            onSnapshot(getPublicCollection('logs'), (snapshot) => {
+                window.appData.logs = [];
+                snapshot.forEach(docSnap => window.appData.logs.push(docSnap.data()));
+                window.appData.logs.sort((a, b) => b.id - a.id);
+                renderTableLogs();
+            }, err => console.error("Error Firestore Logs:", err));
+        }
+
+        // Global functions exposed to window object for UI handlers
+        window.saveSiswaDoc = async (siswaData) => {
+            if (!authUser) return;
+            await setDoc(getPublicDoc('siswa', siswaData.nis), siswaData);
+        };
+
+        window.deleteSiswaDoc = async (nis) => {
+            if (!authUser) return;
+            await deleteDoc(getPublicDoc('siswa', nis));
+        };
+
+        window.saveKelasDoc = async (kelasData) => {
+            if (!authUser) return;
+            await setDoc(getPublicDoc('kelas', kelasData.id), kelasData);
+        };
+
+        window.deleteKelasDoc = async (id) => {
+            if (!authUser) return;
+            await deleteDoc(getPublicDoc('kelas', id));
+        };
+
+        window.saveUserDoc = async (userData) => {
+            if (!authUser) return;
+            await setDoc(getPublicDoc('users', userData.id), userData);
+        };
+
+        window.deleteUserDoc = async (id) => {
+            if (!authUser) return;
+            await deleteDoc(getPublicDoc('users', id));
+        };
+
+        window.addLogDoc = async (logData) => {
+            if (!authUser) return;
+            await setDoc(getPublicDoc('logs', String(logData.id)), logData);
+        };
+
+        window.clearLogsDocs = async () => {
+            if (!authUser) return;
+            window.appData.logs.forEach(async (l) => {
+                await deleteDoc(getPublicDoc('logs', String(l.id)));
+            });
+        };
+    </script>
+
+    <script>
+        // UI Application Controller
         let currentUser = null;
         let piketScanner = null;
         let parentScanner = null;
+        let selectedWaMethod = 'app';
 
-        // Initialize App
         window.onload = function() {
-            loadFromLocalStorage();
             updateNavControls();
-            renderAllTables();
         };
 
-        // Save & Load Local Backup
-        function saveToLocalStorage() {
-            localStorage.setItem('penjemputan_app_db', JSON.stringify(appData));
-        }
+        function changeWaMethod(method) {
+            selectedWaMethod = method;
+            const badge = document.getElementById('badge-wa-mode');
+            const notice = document.getElementById('wa-notice-box');
 
-        function loadFromLocalStorage() {
-            const saved = localStorage.getItem('penjemputan_app_db');
-            if (saved) {
-                try {
-                    appData = JSON.parse(saved);
-                } catch(e) { console.error('Error parse local DB', e); }
+            if (method === 'app') {
+                badge.className = "text-xs bg-emerald-50 text-emerald-600 border border-emerald-200 px-2.5 py-0.5 rounded-full font-bold";
+                badge.textContent = "App WA Windows";
+                notice.innerHTML = `
+                    <i class="fa-brands fa-windows text-emerald-600 text-xl mt-0.5"></i>
+                    <div>
+                        <p class="font-bold">Mode WhatsApp App Windows Aktif:</p>
+                        <p class="mt-0.5 text-emerald-700">Setiap kali NIS dipindai, aplikasi WhatsApp bawaan Windows di PC akan terbuka otomatis dan menyiapkan pesan langsung ke nomor Wali Kelas terkait!</p>
+                    </div>
+                `;
+            } else if (method === 'api') {
+                badge.className = "text-xs bg-indigo-50 text-indigo-600 border border-indigo-200 px-2.5 py-0.5 rounded-full font-bold";
+                badge.textContent = "WhatsApp API Web";
+                notice.innerHTML = `
+                    <i class="fa-solid fa-globe text-indigo-600 text-xl mt-0.5"></i>
+                    <div>
+                        <p class="font-bold">Mode WhatsApp Direct API Aktif:</p>
+                        <p class="mt-0.5 text-indigo-700">Membuka tab cepat browser ke nomor Wali Kelas secara langsung dan stabil.</p>
+                    </div>
+                `;
+            } else {
+                badge.className = "text-xs bg-slate-100 text-slate-600 border border-slate-200 px-2.5 py-0.5 rounded-full font-bold";
+                badge.textContent = "Standard WA Web";
+                notice.innerHTML = `
+                    <i class="fa-brands fa-whatsapp text-slate-600 text-xl mt-0.5"></i>
+                    <div>
+                        <p class="font-bold">Mode Web WhatsApp Standard:</p>
+                        <p class="mt-0.5 text-slate-700">Membuka web.whatsapp.com di tab browser baru.</p>
+                    </div>
+                `;
             }
         }
 
@@ -492,7 +699,6 @@
         }
 
         function switchPage(pageId) {
-            // Stop active QR scanners
             stopScanners();
 
             document.getElementById('page-login').classList.add('hidden');
@@ -530,7 +736,7 @@
             const u = document.getElementById('login-username').value.trim();
             const p = document.getElementById('login-password').value.trim();
 
-            const found = appData.users.find(user => user.username === u && user.password === p);
+            const found = window.appData.users.find(user => user.username === u && user.password === p);
             if (found) {
                 currentUser = found;
                 updateNavControls();
@@ -566,19 +772,13 @@
         }
 
         // RENDER TABLES DATA
-        function renderAllTables() {
-            renderTableSiswa();
-            renderTableKelas();
-            renderTableUsers();
-            renderTableLogs();
-        }
-
         function renderTableSiswa() {
             const tbody = document.getElementById('tbody-siswa');
+            if (!tbody) return;
             tbody.innerHTML = '';
 
-            appData.siswa.forEach(s => {
-                const k = appData.kelas.find(item => item.id === s.kelasId) || { nama: 'Tidak terdaftar', walikelas: '-' };
+            window.appData.siswa.forEach(s => {
+                const k = window.appData.kelas.find(item => item.id === s.kelasId) || { nama: 'Tidak terdaftar', walikelas: '-' };
                 const tr = document.createElement('tr');
                 tr.className = 'hover:bg-slate-50 transition';
                 tr.innerHTML = `
@@ -594,14 +794,15 @@
                 tbody.appendChild(tr);
             });
 
-            document.getElementById('total-siswa-count').textContent = `Total: ${appData.siswa.length} Siswa`;
+            document.getElementById('total-siswa-count').textContent = `Total: ${window.appData.siswa.length} Siswa`;
         }
 
         function renderTableKelas() {
             const tbody = document.getElementById('tbody-kelas');
+            if (!tbody) return;
             tbody.innerHTML = '';
 
-            appData.kelas.forEach(k => {
+            window.appData.kelas.forEach(k => {
                 const tr = document.createElement('tr');
                 tr.className = 'hover:bg-slate-50 transition';
                 tr.innerHTML = `
@@ -619,9 +820,10 @@
 
         function renderTableUsers() {
             const tbody = document.getElementById('tbody-users');
+            if (!tbody) return;
             tbody.innerHTML = '';
 
-            appData.users.forEach(u => {
+            window.appData.users.forEach(u => {
                 const tr = document.createElement('tr');
                 tr.className = 'hover:bg-slate-50 transition';
                 tr.innerHTML = `
@@ -639,14 +841,15 @@
 
         function renderTableLogs() {
             const tbody = document.getElementById('tbody-log-penjemputan');
+            if (!tbody) return;
             tbody.innerHTML = '';
 
-            if (appData.logs.length === 0) {
+            if (window.appData.logs.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-xs text-slate-400">Belum ada riwayat penjemputan hari ini.</td></tr>`;
                 return;
             }
 
-            appData.logs.forEach(l => {
+            window.appData.logs.forEach(l => {
                 const tr = document.createElement('tr');
                 tr.className = 'hover:bg-slate-50 transition';
                 tr.innerHTML = `
@@ -655,9 +858,9 @@
                     <td class="p-3 font-medium">${l.nama}</td>
                     <td class="p-3 text-xs">${l.kelas}</td>
                     <td class="p-3">
-                        <span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-semibold bg-emerald-100 text-emerald-800">
-                            <i class="fa-solid fa-circle-check text-emerald-600"></i> Terkirim Ke Wali Kelas
-                        </span>
+                        <button onclick="retriggerWa('${l.nis}')" class="inline-flex items-center gap-1.5 text-xs px-3 py-1 rounded-lg font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow">
+                            <i class="fa-brands fa-whatsapp"></i> Kirim Ke ${l.walikelas}
+                        </button>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -671,43 +874,32 @@
             document.getElementById('siswa-nis').value = '';
             document.getElementById('siswa-nama').value = '';
             
-            // Render Select Options
             const sel = document.getElementById('siswa-kelas');
-            sel.innerHTML = appData.kelas.map(k => `<option value="${k.id}">${k.nama}</option>`).join('');
+            sel.innerHTML = window.appData.kelas.map(k => `<option value="${k.id}">${k.nama}</option>`).join('');
             
             document.getElementById('modal-siswa').classList.remove('hidden');
         }
 
-        function saveSiswa(e) {
+        async function saveSiswa(e) {
             e.preventDefault();
             const oldNis = document.getElementById('siswa-id-old').value;
             const nis = document.getElementById('siswa-nis').value.trim();
             const nama = document.getElementById('siswa-nama').value.trim();
             const kelasId = document.getElementById('siswa-kelas').value;
 
-            if (oldNis) {
-                // Update
-                const idx = appData.siswa.findIndex(s => s.nis === oldNis);
-                if (idx !== -1) {
-                    appData.siswa[idx] = { nis, nama, kelasId };
-                }
-            } else {
-                // Check Duplicate
-                if (appData.siswa.some(s => s.nis === nis)) {
-                    showAlert('NIS sudah terdaftar!', 'error');
-                    return;
-                }
-                appData.siswa.push({ nis, nama, kelasId });
+            if (oldNis && oldNis !== nis) {
+                await window.deleteSiswaDoc(oldNis);
             }
 
-            saveToLocalStorage();
-            renderTableSiswa();
+            const siswaObj = { nis, nama, kelasId };
+            await window.saveSiswaDoc(siswaObj);
+
             closeModal('modal-siswa');
-            showAlert('Data siswa berhasil disimpan!', 'success');
+            showAlert('Data siswa tersimpan di Firebase Console!', 'success');
         }
 
         function editSiswa(nis) {
-            const s = appData.siswa.find(item => item.nis === nis);
+            const s = window.appData.siswa.find(item => item.nis === nis);
             if (!s) return;
 
             document.getElementById('modal-siswa-title').textContent = 'Edit Data Siswa';
@@ -716,17 +908,15 @@
             document.getElementById('siswa-nama').value = s.nama;
 
             const sel = document.getElementById('siswa-kelas');
-            sel.innerHTML = appData.kelas.map(k => `<option value="${k.id}" ${k.id === s.kelasId ? 'selected' : ''}>${k.nama}</option>`).join('');
+            sel.innerHTML = window.appData.kelas.map(k => `<option value="${k.id}" ${k.id === s.kelasId ? 'selected' : ''}>${k.nama}</option>`).join('');
 
             document.getElementById('modal-siswa').classList.remove('hidden');
         }
 
-        function deleteSiswa(nis) {
+        async function deleteSiswa(nis) {
             if (confirm(`Yakin hapus data siswa dengan NIS ${nis}?`)) {
-                appData.siswa = appData.siswa.filter(s => s.nis !== nis);
-                saveToLocalStorage();
-                renderTableSiswa();
-                showAlert('Data siswa berhasil dihapus.', 'info');
+                await window.deleteSiswaDoc(nis);
+                showAlert('Data siswa berhasil dihapus dari Firebase.', 'info');
             }
         }
 
@@ -741,8 +931,8 @@
 
         // EXPORT & IMPORT EXCEL SISWA
         function exportSiswaToExcel() {
-            const exportData = appData.siswa.map(s => {
-                const k = appData.kelas.find(item => item.id === s.kelasId) || { nama: '-', walikelas: '-', hp: '-' };
+            const exportData = window.appData.siswa.map(s => {
+                const k = window.appData.kelas.find(item => item.id === s.kelasId) || { nama: '-', walikelas: '-', hp: '-' };
                 return {
                     'NIS (Kolom 1)': s.nis,
                     'Nama Siswa (Kolom 2)': s.nama,
@@ -764,7 +954,7 @@
             if (!file) return;
 
             const reader = new FileReader();
-            reader.onload = function(evt) {
+            reader.onload = async function(evt) {
                 try {
                     const data = new Uint8Array(evt.target.result);
                     const workbook = XLSX.read(data, { type: 'array' });
@@ -778,25 +968,19 @@
                     }
 
                     let countAdded = 0;
-                    // Skip header row
                     for (let i = 1; i < json.length; i++) {
                         const row = json[i];
                         const nis = String(row[0] || '').trim();
                         const nama = String(row[1] || '').trim();
 
                         if (nis && nama) {
-                            const exists = appData.siswa.find(s => s.nis === nis);
-                            const defaultKelas = appData.kelas[0] ? appData.kelas[0].id : '10A';
-                            if (!exists) {
-                                appData.siswa.push({ nis, nama, kelasId: defaultKelas });
-                                countAdded++;
-                            }
+                            const defaultKelas = window.appData.kelas[0] ? window.appData.kelas[0].id : '10A';
+                            await window.saveSiswaDoc({ nis, nama, kelasId: defaultKelas });
+                            countAdded++;
                         }
                     }
 
-                    saveToLocalStorage();
-                    renderTableSiswa();
-                    showAlert(`Berhasil mengimpor ${countAdded} siswa baru dari file!`, 'success');
+                    showAlert(`Berhasil mengimpor ${countAdded} siswa ke Firebase Console!`, 'success');
                 } catch(err) {
                     console.error(err);
                     showAlert('Gagal memproses file Excel!', 'error');
@@ -815,7 +999,7 @@
             document.getElementById('modal-kelas').classList.remove('hidden');
         }
 
-        function saveKelas(e) {
+        async function saveKelas(e) {
             e.preventDefault();
             const oldId = document.getElementById('kelas-id-old').value;
             const nama = document.getElementById('kelas-nama').value.trim();
@@ -824,25 +1008,15 @@
 
             if (hp.startsWith('0')) hp = '62' + hp.substring(1);
 
-            if (oldId) {
-                const idx = appData.kelas.findIndex(k => k.id === oldId);
-                if (idx !== -1) {
-                    appData.kelas[idx] = { id: oldId, nama, walikelas, hp };
-                }
-            } else {
-                const id = 'K_' + Date.now();
-                appData.kelas.push({ id, nama, walikelas, hp });
-            }
+            const id = oldId || ('K_' + Date.now());
+            await window.saveKelasDoc({ id, nama, walikelas, hp });
 
-            saveToLocalStorage();
-            renderTableKelas();
-            renderTableSiswa();
             closeModal('modal-kelas');
-            showAlert('Data kelas berhasil disimpan!', 'success');
+            showAlert('Data kelas berhasil disimpan ke Firebase!', 'success');
         }
 
         function editKelas(id) {
-            const k = appData.kelas.find(item => item.id === id);
+            const k = window.appData.kelas.find(item => item.id === id);
             if (!k) return;
 
             document.getElementById('modal-kelas-title').textContent = 'Edit Data Kelas';
@@ -854,13 +1028,10 @@
             document.getElementById('modal-kelas').classList.remove('hidden');
         }
 
-        function deleteKelas(id) {
+        async function deleteKelas(id) {
             if (confirm('Hapus kelas ini? Siswa di kelas ini akan terpengaruh.')) {
-                appData.kelas = appData.kelas.filter(k => k.id !== id);
-                saveToLocalStorage();
-                renderTableKelas();
-                renderTableSiswa();
-                showAlert('Kelas telah dihapus.', 'info');
+                await window.deleteKelasDoc(id);
+                showAlert('Kelas telah dihapus dari Firebase.', 'info');
             }
         }
 
@@ -874,7 +1045,7 @@
             document.getElementById('modal-user').classList.remove('hidden');
         }
 
-        function saveUser(e) {
+        async function saveUser(e) {
             e.preventDefault();
             const oldId = document.getElementById('user-id-old').value;
             const name = document.getElementById('user-nama').value.trim();
@@ -882,24 +1053,15 @@
             const password = document.getElementById('user-password').value.trim();
             const role = document.getElementById('user-role').value;
 
-            if (oldId) {
-                const idx = appData.users.findIndex(u => u.id === oldId);
-                if (idx !== -1) {
-                    appData.users[idx] = { id: oldId, name, username, password, role };
-                }
-            } else {
-                const id = 'U_' + Date.now();
-                appData.users.push({ id, name, username, password, role });
-            }
+            const id = oldId || ('U_' + Date.now());
+            await window.saveUserDoc({ id, name, username, password, role });
 
-            saveToLocalStorage();
-            renderTableUsers();
             closeModal('modal-user');
-            showAlert('Pengguna berhasil diperbarui!', 'success');
+            showAlert('Pengguna tersimpan di Firebase Console!', 'success');
         }
 
         function editUser(id) {
-            const u = appData.users.find(item => item.id === id);
+            const u = window.appData.users.find(item => item.id === id);
             if (!u) return;
 
             document.getElementById('modal-user-title').textContent = 'Edit Pengguna';
@@ -912,20 +1074,18 @@
             document.getElementById('modal-user').classList.remove('hidden');
         }
 
-        function deleteUser(id) {
-            if (appData.users.length <= 1) {
+        async function deleteUser(id) {
+            if (window.appData.users.length <= 1) {
                 showAlert('Tidak bisa menghapus user terakhir!', 'error');
                 return;
             }
             if (confirm('Hapus akun ini?')) {
-                appData.users = appData.users.filter(u => u.id !== id);
-                saveToLocalStorage();
-                renderTableUsers();
-                showAlert('User berhasil dihapus.', 'info');
+                await window.deleteUserDoc(id);
+                showAlert('User berhasil dihapus dari Firebase.', 'info');
             }
         }
 
-        // SCANNER & AUTOMATIC WHATSAPP FORWARDING LOGIC
+        // SCANNER LOGIC
         function initPiketScanner() {
             if (piketScanner) piketScanner.clear();
 
@@ -936,9 +1096,7 @@
 
             piketScanner.render((decodedText) => {
                 handleNisScanned(decodedText.trim(), 'piket');
-            }, (error) => {
-                // Scanner continuous scan error callback ignored
-            });
+            }, (error) => {});
         }
 
         function initParentScanner() {
@@ -979,22 +1137,30 @@
             document.getElementById('parent-nis-input').value = '';
         }
 
-        // CORE AUTOMATION LOGIC: Auto Match & Send WhatsApp
-        function handleNisScanned(nis, source) {
-            const siswa = appData.siswa.find(s => s.nis === nis);
+        function retriggerWa(nis) {
+            handleNisScanned(nis, 'manual');
+        }
+
+        // AUTOMATION WHATSAPP & FIREBASE LOG REALTIME
+        async function handleNisScanned(nis, source) {
+            const siswa = window.appData.siswa.find(s => s.nis === nis);
 
             if (!siswa) {
                 showAlert(`Siswa dengan NIS ${nis} tidak ditemukan dalam database!`, 'error');
                 return;
             }
 
-            const kelas = appData.kelas.find(k => k.id === siswa.kelasId);
+            const kelas = window.appData.kelas.find(k => k.id === siswa.kelasId);
             if (!kelas || !kelas.hp) {
                 showAlert(`Data Wali Kelas / No HP WA untuk kelas ${siswa.nama} belum dikonfigurasi!`, 'error');
                 return;
             }
 
-            // Create Log Entry
+            // Clean HP Number
+            let cleanHp = kelas.hp.replace(/[^0-9]/g, '');
+            if (cleanHp.startsWith('0')) cleanHp = '62' + cleanHp.substring(1);
+
+            // Time string
             const now = new Date();
             const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
             
@@ -1005,39 +1171,61 @@
                 kelas: kelas.nama,
                 waktu: timeStr,
                 walikelas: kelas.walikelas,
-                walikelasHp: kelas.hp
+                walikelasHp: cleanHp
             };
 
-            appData.logs.unshift(logEntry);
-            saveToLocalStorage();
-            renderTableLogs();
+            // Save log to Firebase Firestore Console Realtime
+            await window.addLogDoc(logEntry);
 
-            // Construct WhatsApp Message
-            const msg = `*NOTIFIKASI PENJEMPUTAN SISWA*%0A` +
-                        `----------------------------------------%0A` +
-                        `*Siswa:* ${siswa.nama}%0A` +
-                        `*NIS:* ${siswa.nis}%0A` +
-                        `*Kelas:* ${kelas.nama}%0A` +
-                        `*Waktu Penjemputan:* ${timeStr} WIB%0A` +
-                        `*Wali Kelas:* ${kelas.walikelas}%0A` +
-                        `----------------------------------------%0A` +
-                        `_Notifikasi ini dikirim secara otomatis via Sistem Penjemputan Sekolah._`;
+            // Construct Message
+            const rawMsg = `*NOTIFIKASI PENJEMPUTAN SISWA*\n` +
+                           `----------------------------------------\n` +
+                           `*Siswa:* ${siswa.nama}\n` +
+                           `*NIS:* ${siswa.nis}\n` +
+                           `*Kelas:* ${kelas.nama}\n` +
+                           `*Waktu Penjemputan:* ${timeStr} WIB\n` +
+                           `*Wali Kelas:* ${kelas.walikelas}\n` +
+                           `----------------------------------------\n` +
+                           `_Notifikasi dikirim otomatis via Sistem Penjemputan Sekolah._`;
 
-            const waUrl = `https://web.whatsapp.com/send?phone=${kelas.hp}&text=${msg}`;
+            const encodedMsg = encodeURIComponent(rawMsg);
 
-            showAlert(`NIS ${nis} [${siswa.nama}] Teridentifikasi! Mengalihkan pesan WA ke Wali Kelas...`, 'success');
+            let targetUrl = '';
+            if (selectedWaMethod === 'app') {
+                targetUrl = `whatsapp://send?phone=${cleanHp}&text=${encodedMsg}`;
+            } else if (selectedWaMethod === 'api') {
+                targetUrl = `https://api.whatsapp.com/send?phone=${cleanHp}&text=${encodedMsg}`;
+            } else {
+                targetUrl = `https://web.whatsapp.com/send?phone=${cleanHp}&text=${encodedMsg}`;
+            }
 
-            // AUTO FORWARDING TO WHATSAPP WEB
-            setTimeout(() => {
-                window.open(waUrl, '_blank');
-            }, 800);
+            // Populate Modal Konfirmasi WA
+            document.getElementById('wa-confirm-nama').textContent = siswa.nama;
+            document.getElementById('wa-confirm-detail').textContent = `NIS: ${siswa.nis} | Kelas: ${kelas.nama}`;
+            document.getElementById('wa-confirm-walikelas').textContent = kelas.walikelas;
+            document.getElementById('wa-confirm-hp').textContent = `+${cleanHp}`;
+
+            const btnTrigger = document.getElementById('btn-trigger-wa-desktop');
+            btnTrigger.href = targetUrl;
+
+            document.getElementById('modal-wa-confirm').classList.remove('hidden');
+
+            try {
+                if (selectedWaMethod === 'app') {
+                    window.location.href = targetUrl;
+                } else {
+                    window.open(targetUrl, '_blank');
+                }
+            } catch(e) {
+                console.error(e);
+            }
+
+            showAlert(`NIS ${nis} (${siswa.nama}) tersimpan di Firestore & Membuka WhatsApp...`, 'success');
         }
 
-        function clearTodayLog() {
-            if (confirm('Bersihkan riwayat log penjemputan hari ini?')) {
-                appData.logs = [];
-                saveToLocalStorage();
-                renderTableLogs();
+        async function clearTodayLog() {
+            if (confirm('Bersihkan riwayat log penjemputan dari Firebase?')) {
+                await window.clearLogsDocs();
             }
         }
 
