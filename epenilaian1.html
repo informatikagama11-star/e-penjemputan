@@ -12,6 +12,8 @@
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <!-- QRCode JS Generator Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- SheetJS (XLSX) Library untuk membaca & menulis Excel (.xlsx/.xls) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         @media print {
             body * {
@@ -111,11 +113,11 @@
                     <i class="fa-solid fa-qrcode"></i>
                     <span>Scanner Piket</span>
                 </button>
-                <button onclick="switchTab('kelas')" id="tab-kelas" class="admin-only tab-btn flex-1 min-w-[140px] py-2.5 px-3 rounded-lg flex items-center justify-center space-x-2 transition text-slate-600 hover:bg-slate-100">
+                <button onclick="switchTab('kelas')" id="tab-kelas" class="admin-only tab-btn flex-1 min-w-[140px] py-2.5 px-3 rounded-lg flex items-center justify-center space-x-2 transition text-slate-600 hover:bg-slate-100 hidden">
                     <i class="fa-solid fa-chalkboard-user"></i>
                     <span>Data Kelas & Siswa</span>
                 </button>
-                <button onclick="switchTab('settings')" id="tab-settings" class="admin-only tab-btn flex-1 min-w-[130px] py-2.5 px-3 rounded-lg flex items-center justify-center space-x-2 transition text-slate-600 hover:bg-slate-100">
+                <button onclick="switchTab('settings')" id="tab-settings" class="admin-only tab-btn flex-1 min-w-[130px] py-2.5 px-3 rounded-lg flex items-center justify-center space-x-2 transition text-slate-600 hover:bg-slate-100 hidden">
                     <i class="fa-solid fa-sliders"></i>
                     <span>Pengaturan API & Akun</span>
                 </button>
@@ -190,8 +192,8 @@
                 </div>
             </section>
 
-            <!-- SECTION 2: DATA KELAS & SISWA (FOLDER-BASED VIEW) -->
-            <section id="view-kelas" class="hidden space-y-6">
+            <!-- SECTION 2: DATA KELAS & SISWA (ADMIN ONLY) -->
+            <section id="view-kelas" class="admin-only hidden space-y-6">
 
                 <!-- SUB-VIEW 1: DAFTAR KARTU KELAS (DEFAULT) -->
                 <div id="classListContainer" class="space-y-4">
@@ -202,7 +204,7 @@
                                     <i class="fa-solid fa-folder-tree text-indigo-600"></i>
                                     <span>Master Data Kelas & Wali Kelas</span>
                                 </h2>
-                                <p class="text-xs text-slate-500 mt-0.5">Pilih kelas untuk mengelola data siswa, impor/ekspor CSV, atau buat kelas baru.</p>
+                                <p class="text-xs text-slate-500 mt-0.5">Pilih kelas untuk mengelola data siswa, impor/ekspor file Excel, atau buat kelas baru.</p>
                             </div>
                             <div class="flex flex-wrap gap-2 w-full sm:w-auto">
                                 <button onclick="openModalClass()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-3.5 py-2.5 rounded-xl flex items-center space-x-1.5 transition shadow-sm">
@@ -278,14 +280,14 @@
                                     <i class="fa-solid fa-plus"></i>
                                     <span>Tambah Siswa</span>
                                 </button>
-                                <button onclick="triggerImportCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3 py-2 rounded-lg flex items-center space-x-1.5 transition" title="Format CSV: NIS, Nama Siswa">
+                                <button onclick="triggerImportCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3 py-2 rounded-lg flex items-center space-x-1.5 transition" title="Pilih file .xlsx, .xls, atau .csv">
                                     <i class="fa-solid fa-file-import"></i>
-                                    <span>Import CSV (NIS, Nama)</span>
+                                    <span>Import Excel (.xlsx/.xls)</span>
                                 </button>
-                                <input type="file" id="fileCsvInput" accept=".csv" class="hidden" onchange="handleImportCSV(event)">
-                                <button onclick="exportCurrentClassCSV()" class="bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold px-3 py-2 rounded-lg flex items-center space-x-1.5 transition" title="Export CSV: NIS, Nama Siswa">
+                                <input type="file" id="fileCsvInput" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleImportCSV(event)">
+                                <button onclick="exportCurrentClassCSV()" class="bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold px-3 py-2 rounded-lg flex items-center space-x-1.5 transition" title="Download file .xlsx">
                                     <i class="fa-solid fa-file-excel"></i>
-                                    <span>Export CSV (NIS, Nama)</span>
+                                    <span>Export Excel (.xlsx)</span>
                                 </button>
                                 <button onclick="openModalDeleteClassStudents()" class="bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold px-3 py-2 rounded-lg flex items-center space-x-1.5 transition">
                                     <i class="fa-solid fa-trash"></i>
@@ -294,10 +296,10 @@
                             </div>
                         </div>
 
-                        <!-- CSV Format Helper Note -->
+                        <!-- Excel Format Helper Note -->
                         <div class="mb-4 text-[11px] text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-200 flex items-center gap-2">
                             <i class="fa-solid fa-circle-info text-indigo-500"></i>
-                            <span><strong>Format CSV Sederhana:</strong> Cukup gunakan 2 kolom di file CSV Anda: <code>NIS,Nama Siswa</code></span>
+                            <span><strong>Format File Excel Rapi:</strong> Kolom A (<code>No</code>), Kolom B (<code>NIS</code>), Kolom C (<code>Nama Siswa</code>). File tipe <strong>.xlsx</strong>, <strong>.xls</strong>, dan <strong>.csv</strong> dapat langsung diunggah!</span>
                         </div>
 
                         <!-- Search Box inside Class Detail -->
@@ -330,8 +332,8 @@
 
             </section>
 
-            <!-- SECTION 3: PENGATURAN API FONNTE & AKUN LOGIN -->
-            <section id="view-settings" class="hidden space-y-6">
+            <!-- SECTION 3: PENGATURAN API FONNTE & AKUN LOGIN (ADMIN ONLY) -->
+            <section id="view-settings" class="admin-only hidden space-y-6">
                 
                 <!-- CARD 1: KONFIGURASI API FONNTE & NOMOR PIKET -->
                 <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200 max-w-2xl mx-auto">
@@ -339,7 +341,7 @@
                         <i class="fa-brands fa-whatsapp text-emerald-500 text-xl"></i>
                         <span>Konfigurasi WhatsApp Gateway (Fonnte API)</span>
                     </h2>
-                    <p class="text-xs text-slate-500 mb-6">Atur nomor HP pengirim khusus petugas piket dan token API Fonnte Anda.</p>
+                    <p class="text-xs text-slate-500 mb-6">Atur nomor HP WhatsApp khusus Petugas Piket dan Fonnte API Token Key di sini. Pengaturan ini hanya dapat diakses oleh Admin.</p>
 
                     <form onsubmit="saveFonnteSettings(event)" class="space-y-4 text-sm">
                         <div>
@@ -347,7 +349,7 @@
                             <input type="text" id="fonnteSenderNumber" value="6287780268666" required
                                 placeholder="6287780268666"
                                 class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none font-mono">
-                            <p class="text-[11px] text-slate-400 mt-1">Masukkan nomor WA khusus HP petugas piket (Awali kode negara <strong>62</strong>). Nomor Admin Anda tidak akan muncul.</p>
+                            <p class="text-[11px] text-slate-400 mt-1">Masukkan nomor WA HP petugas piket (Awali kode negara <strong>62</strong>). Nomor pribadi Admin Anda tidak akan muncul.</p>
                         </div>
 
                         <div>
@@ -673,20 +675,23 @@
                     if (cfg.piketUsername) window.appCredentials.piketUsername = cfg.piketUsername;
                     if (cfg.piketPassword) window.appCredentials.piketPassword = cfg.piketPassword;
 
-                    // Fill Input Fields in Settings
-                    const senderEl = document.getElementById('fonnteSenderNumber');
-                    const tokenEl = document.getElementById('fonnteToken');
-                    const adminUserEl = document.getElementById('adminUsername');
-                    const adminPassEl = document.getElementById('adminPassword');
-                    const piketUserEl = document.getElementById('piketUsername');
-                    const piketPassEl = document.getElementById('piketPassword');
+                    // Fill Input Fields in Settings ONLY if current user is admin
+                    const savedUser = JSON.parse(sessionStorage.getItem('e_user') || '{}');
+                    if (savedUser.role === 'admin') {
+                        const senderEl = document.getElementById('fonnteSenderNumber');
+                        const tokenEl = document.getElementById('fonnteToken');
+                        const adminUserEl = document.getElementById('adminUsername');
+                        const adminPassEl = document.getElementById('adminPassword');
+                        const piketUserEl = document.getElementById('piketUsername');
+                        const piketPassEl = document.getElementById('piketPassword');
 
-                    if (senderEl && cfg.fonnteSender) senderEl.value = cfg.fonnteSender;
-                    if (tokenEl && cfg.fonnteToken) tokenEl.value = cfg.fonnteToken;
-                    if (adminUserEl && cfg.adminUsername) adminUserEl.value = cfg.adminUsername;
-                    if (adminPassEl && cfg.adminPassword) adminPassEl.value = cfg.adminPassword;
-                    if (piketUserEl && cfg.piketUsername) piketUserEl.value = cfg.piketUsername;
-                    if (piketPassEl && cfg.piketPassword) piketPassEl.value = cfg.piketPassword;
+                        if (senderEl && cfg.fonnteSender) senderEl.value = cfg.fonnteSender;
+                        if (tokenEl && cfg.fonnteToken) tokenEl.value = cfg.fonnteToken;
+                        if (adminUserEl && cfg.adminUsername) adminUserEl.value = cfg.adminUsername;
+                        if (adminPassEl && cfg.adminPassword) adminPassEl.value = cfg.adminPassword;
+                        if (piketUserEl && cfg.piketUsername) piketUserEl.value = cfg.piketUsername;
+                        if (piketPassEl && cfg.piketPassword) piketPassEl.value = cfg.piketPassword;
+                    }
                 }
             }, (err) => console.error("Error Settings Listener:", err));
         }
@@ -965,15 +970,18 @@
             const adminNavs = document.querySelectorAll('.admin-only');
 
             if (user.role === 'piket') {
+                // Strictly hide all admin elements and force switch to scanner
                 adminNavs.forEach(el => el.classList.add('hidden'));
                 switchTab('scanner');
             } else {
+                // Show admin elements for Master Admin
                 adminNavs.forEach(el => el.classList.remove('hidden'));
+                const cfg = getFonnteConfig();
+                const senderEl = document.getElementById('fonnteSenderNumber');
+                const tokenEl = document.getElementById('fonnteToken');
+                if (senderEl) senderEl.value = cfg.sender;
+                if (tokenEl) tokenEl.value = cfg.token;
             }
-
-            const cfg = getFonnteConfig();
-            document.getElementById('fonnteSenderNumber').value = cfg.sender;
-            document.getElementById('fonnteToken').value = cfg.token;
         }
 
         function handleLogout() {
@@ -1034,7 +1042,7 @@
 
             if (!cfg.token) {
                 console.warn("Fonnte API Token belum diatur!");
-                showToast("Peringatan: Token Fonnte belum diisi di Pengaturan API", "error");
+                showToast("Peringatan: Token Fonnte belum diisi oleh Admin", "error");
                 return false;
             }
 
@@ -1199,21 +1207,39 @@
         }
 
         // ==========================================
-        // TAB NAVIGATION CONTROLLER
+        // TAB NAVIGATION CONTROLLER (STRICTLY GUARDED)
         // ==========================================
         function switchTab(tabName) {
+            const savedUser = JSON.parse(sessionStorage.getItem('e_user') || '{}');
+            
+            // Security Guard: Petugas Piket is STRICTLY restricted to 'scanner' tab
+            if (savedUser.role === 'piket' && tabName !== 'scanner') {
+                tabName = 'scanner';
+            }
+
             const tabs = ['scanner', 'kelas', 'settings'];
             tabs.forEach(t => {
                 const view = document.getElementById(`view-${t}`);
                 const btn = document.getElementById(`tab-${t}`);
                 if (view) view.classList.add('hidden');
-                if (btn) btn.className = 'tab-btn flex-1 min-w-[110px] py-2.5 px-3 rounded-lg flex items-center justify-center space-x-2 transition text-slate-600 hover:bg-slate-100';
+                if (btn) {
+                    btn.classList.remove('bg-indigo-600', 'text-white');
+                    btn.classList.add('text-slate-600', 'hover:bg-slate-100');
+                }
             });
 
             const activeView = document.getElementById(`view-${tabName}`);
             const activeBtn = document.getElementById(`tab-${tabName}`);
             if (activeView) activeView.classList.remove('hidden');
-            if (activeBtn) activeBtn.className = 'tab-btn flex-1 min-w-[110px] py-2.5 px-3 rounded-lg flex items-center justify-center space-x-2 transition bg-indigo-600 text-white';
+            if (activeBtn) {
+                activeBtn.classList.remove('text-slate-600', 'hover:bg-slate-100');
+                activeBtn.classList.add('bg-indigo-600', 'text-white');
+            }
+
+            // Ensure admin-only elements remain hidden if role is piket
+            if (savedUser.role === 'piket') {
+                document.querySelectorAll('.admin-only').forEach(el => el.classList.add('hidden'));
+            }
 
             if (tabName === 'kelas') {
                 closeClassDetail();
@@ -1501,7 +1527,7 @@
         }
 
         // ==========================================
-        // CSV IMPORT & EXPORT SEDERHANA (NIS, NAMA)
+        // EXCEL / CSV IMPORT & EXPORT HANDLER
         // ==========================================
         function triggerImportCSV() {
             document.getElementById('fileCsvInput').click();
@@ -1513,41 +1539,75 @@
 
             const reader = new FileReader();
             reader.onload = function(e) {
-                const text = e.target.result;
-                const lines = text.split('\n');
-                let count = 0;
+                try {
+                    let rows = [];
 
-                for (let i = 0; i < lines.length; i++) {
-                    const line = lines[i].trim();
-                    if (line && !line.toLowerCase().startsWith('nis')) {
-                        const cols = line.split(',');
-                        if (cols.length >= 2) {
-                            const nis = cols[0].replace(/"/g, '').trim();
-                            const nama = cols[1].replace(/"/g, '').trim();
+                    // Jika library XLSX tersedia, gunakan untuk membaca .xlsx, .xls, maupun .csv secara sempurna
+                    if (window.XLSX) {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array', raw: false }); // raw: false menjaga angka dengan nol di depan seperti '0702'
+                        const firstSheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[firstSheetName];
+                        rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: false, defval: '' });
+                    } else {
+                        // Fallback teks standar untuk .csv
+                        const text = new TextDecoder().decode(e.target.result);
+                        const lines = text.split('\n');
+                        rows = lines.map(line => line.split(/[,;\t]/).map(c => c.replace(/^["'\s]+|["'\s]+$/g, '').trim()));
+                    }
 
-                            let kelas = (cols.length >= 5) ? cols[2].replace(/"/g, '').trim() : currentSelectedClass;
-                            if (currentSelectedClass && currentSelectedClass !== 'ALL') {
-                                kelas = currentSelectedClass;
+                    let count = 0;
+
+                    for (let i = 0; i < rows.length; i++) {
+                        const cols = rows[i].map(c => String(c || '').trim());
+                        if (cols.length === 0 || !cols.some(Boolean)) continue;
+
+                        // Lewati baris header jika mengandung kata 'no' atau 'nis'
+                        const col0Lower = cols[0].toLowerCase();
+                        const col1Lower = (cols[1] || '').toLowerCase();
+                        if (i === 0 && (col0Lower.includes('no') || col0Lower.includes('nis') || col1Lower.includes('nis'))) {
+                            continue;
+                        }
+
+                        let nis = '';
+                        let nama = '';
+
+                        // Jika format file Excel 3 kolom (No, NIS, Nama Siswa)
+                        if (cols.length >= 3) {
+                            if (!isNaN(cols[0]) && cols[0] !== '') {
+                                nis = cols[1];
+                                nama = cols[2];
+                            } else {
+                                nis = cols[0];
+                                nama = cols[1];
                             }
-                            const wali = (cols.length >= 5) ? cols[3].replace(/"/g, '').trim() : '';
-                            const waWali = (cols.length >= 5) ? formatPhoneNumber(cols[4].replace(/"/g, '').trim()) : '';
+                        } else if (cols.length === 2) {
+                            // Format 2 Kolom (NIS, Nama Siswa)
+                            nis = cols[0];
+                            nama = cols[1];
+                        }
 
-                            if (nis && nama) {
-                                window.saveSiswaFirebase({
-                                    nis,
-                                    nama,
-                                    kelas: kelas || '10-A',
-                                    wali,
-                                    waWali
-                                });
-                                count++;
-                            }
+                        if (nis && nama) {
+                            let kelas = currentSelectedClass && currentSelectedClass !== 'ALL' ? currentSelectedClass : '10-A';
+                            
+                            window.saveSiswaFirebase({
+                                nis,
+                                nama,
+                                kelas,
+                                wali: '',
+                                waWali: ''
+                            });
+                            count++;
                         }
                     }
+                    showToast(`Berhasil mengimpor ${count} siswa!`);
+                } catch (err) {
+                    console.error("Error membaca file:", err);
+                    showToast("Gagal membaca file Excel/CSV.", "error");
                 }
-                showToast(`Berhasil mengimpor ${count} siswa!`);
             };
-            reader.readAsText(file);
+
+            reader.readAsArrayBuffer(file);
             event.target.value = '';
         }
 
@@ -1558,25 +1618,39 @@
 
         function exportSiswaToCSV(kelasFilter = null) {
             let dataToExport = window.dbSiswa || [];
-            let filename = "data_siswa_semua.csv";
+            let filename = "data_siswa_semua.xlsx";
 
             if (kelasFilter) {
                 dataToExport = dataToExport.filter(s => s.kelas === kelasFilter);
-                filename = `data_siswa_kelas_${kelasFilter}.csv`;
+                filename = `data_siswa_kelas_${kelasFilter}.xlsx`;
             }
 
-            let csv = "NIS,Nama Siswa\n";
-            dataToExport.forEach(s => {
-                csv += `"${s.nis}","${s.nama}"\n`;
-            });
+            // Jika XLSX library tersedia, buat file Excel .xlsx asli
+            if (window.XLSX) {
+                const sheetData = [["No", "NIS", "Nama Siswa"]];
+                dataToExport.forEach((s, idx) => {
+                    sheetData.push([idx + 1, String(s.nis), s.nama]);
+                });
 
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.setAttribute("download", filename);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+                const ws = XLSX.utils.aoa_to_sheet(sheetData);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Siswa");
+                XLSX.writeFile(wb, filename);
+            } else {
+                // Fallback jika tanpa XLSX library
+                let csv = "No,NIS,Nama Siswa\n";
+                dataToExport.forEach((s, index) => {
+                    csv += `${index + 1},${s.nis},${s.nama}\n`;
+                });
+
+                const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.setAttribute("download", filename.replace('.xlsx', '.csv'));
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
         }
 
         // ==========================================
