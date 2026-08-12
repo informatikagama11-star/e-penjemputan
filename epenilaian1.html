@@ -803,28 +803,15 @@
 
         window.savePetugasFirebase = async function(data) {
             try {
-                if (data.id && data.id !== "") {
-                    await setDoc(doc(db, "petugas", data.id), data);
-                } else {
-                    await addDoc(collection(db, "petugas"), data);
-                }
+                if (data.id) await setDoc(doc(db, "petugas", data.id), data);
+                else await addDoc(collection(db, "petugas"), data);
                 showToast("Data petugas piket tersimpan!");
-            } catch(e) { 
-                console.error(e);
-                showToast("Gagal menyimpan petugas", "error"); 
-            }
+            } catch(e) { showToast("Gagal menyimpan petugas", "error"); }
         };
 
         window.deletePetugasFirebase = async function(id) {
-            try { 
-                if (!id) return;
-                await deleteDoc(doc(db, "petugas", id)); 
-                showToast("Petugas berhasil dihapus."); 
-            }
-            catch(e) { 
-                console.error(e);
-                showToast("Gagal menghapus petugas", "error"); 
-            }
+            try { await deleteDoc(doc(db, "petugas", id)); showToast("Petugas dihapus."); }
+            catch(e) { showToast("Gagal menghapus", "error"); }
         };
 
         window.addScanLogFirebase = async function(nama, kelas, waktu, targetWa, statusWa, petugasNama) {
@@ -1047,7 +1034,9 @@
             user.token = tokenVal;
             sessionStorage.setItem('e_user', JSON.stringify(user));
 
+            // Update in Firebase dbPetugas
             if (user.id && window.savePetugasFirebase) {
+                // Find existing petugas data to preserve name & credentials
                 const list = window.dbPetugas || [];
                 const found = list.find(p => p.id === user.id);
                 if (found) {
@@ -1089,7 +1078,7 @@
         function startCamera() {
             if (html5QrCode && html5QrCode.isScanning) return;
 
-            const facingChoice = document.getElementById('cameraSelect').value;
+            const facingChoice = document.getElementById('cameraSelect').value; // 'environment' or 'user'
             html5QrCode = new Html5Qrcode("reader");
             const config = { fps: 10, qrbox: { width: 220, height: 220 } };
 
@@ -1287,7 +1276,7 @@
 
         function handleSavePetugas(e) {
             e.preventDefault();
-            const id = document.getElementById('formPetugasId').value.trim();
+            const id = document.getElementById('formPetugasId').value;
             const nama = document.getElementById('formPetugasNama').value.trim();
             const username = document.getElementById('formPetugasUser').value.trim();
             const password = document.getElementById('formPetugasPass').value.trim();
@@ -1538,6 +1527,7 @@
             } else {
                 if (window.deleteClassStudentsFirebase) window.deleteClassStudentsFirebase(currentSelectedClass);
             }
+            closeModalDeleteClassStudents();
         }
 
         // Import/Export Excel
