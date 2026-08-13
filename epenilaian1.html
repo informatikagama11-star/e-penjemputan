@@ -285,6 +285,10 @@
                                 <p class="text-xs text-slate-500 mt-0.5">Pilih kelas untuk mengelola data siswa, impor/ekspor file Excel sesuai urutan absen, atau buat kelas baru.</p>
                             </div>
                             <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+                                <button onclick="resetAllClasses()" class="bg-rose-100 hover:bg-rose-200 text-rose-700 text-xs font-semibold px-3 py-2.5 rounded-xl flex items-center space-x-1.5 transition" title="Hapus seluruh data kelas lama">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                    <span>Hapus Semua Data Kelas</span>
+                                </button>
                                 <button onclick="openModalClass()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-3.5 py-2.5 rounded-xl flex items-center space-x-1.5 transition shadow-sm">
                                     <i class="fa-solid fa-plus"></i>
                                     <span>Buat Kelas Baru</span>
@@ -531,7 +535,11 @@
             <h3 id="modalClassTitle" class="font-bold text-slate-800 text-lg mb-4">Buat Kelas & Wali Kelas</h3>
 
             <form onsubmit="handleSaveClassAndWali(event)" class="space-y-3 text-xs sm:text-sm">
-                <input type="hidden" id="formClassId" value="">
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">ID Kelas (Wajib Angka/Kode Unik, Cth: 1, 2, dst)</label>
+                    <input type="text" id="formClassIdCustom" required placeholder="Contoh: 1 atau K1"
+                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none font-mono">
+                </div>
                 <div>
                     <label class="block font-semibold text-slate-700 mb-1">Nama Kelas</label>
                     <input type="text" id="formClassName" required placeholder="Contoh: Gema"
@@ -770,10 +778,15 @@
                 renderTableSiswaDetail();
             });
 
-            // Wali Kelas
+            // Wali Kelas (Urutkan berdasarkan ID Kelas)
             onSnapshot(collection(db, "walikelas"), (snapshot) => {
                 dbWaliKelas = [];
                 snapshot.forEach(docSnap => dbWaliKelas.push({ id: docSnap.id, ...docSnap.data() }));
+                dbWaliKelas.sort((a, b) => {
+                    const idA = String(a.classId || a.id || '');
+                    const idB = String(b.classId || b.id || '');
+                    return idA.localeCompare(idB, undefined, { numeric: true });
+                });
                 window.dbWaliKelas = dbWaliKelas;
                 updateClassDropdown();
                 renderClassCards();
@@ -888,20 +901,57 @@
 
         window.saveWalikelasFirebase = async function(data) {
             try {
-                if (data.id) await setDoc(doc(db, "walikelas", data.id), data);
-                else await addDoc(collection(db, "walikelas"), data);
-                showToast("Kelas & Wali Kelas tersimpan!");
-            } catch(e) { showToast("Gagal menyimpan kelas", "error"); }
+                const customId = String(data.classId || '').trim();
+                if (!customId) {
+                    showToast("ID Kelas wajib diisi!", "error");
+                    return;
+                }
+                const classDocRef = doc(db, "walikelas", customId);
+                await setDoc(classDocRef, {
+                    classId: customId,
+                    kelas: data.kelas,
+                    nama: data.nama,
+                    wa: data.wa
+                });
+                showToast("Data kelas & wali kelas tersimpan!");
+            } catch(e) { 
+                console.error(e);
+                showToast("Gagal menyimpan kelas", "error"); 
+            }
         };
 
         window.deleteWalikelasFirebase = async function(id) {
-            try { await deleteDoc(doc(db, "walikelas", id)); showToast("Kelas dihapus."); }
-            catch(e) { showToast("Gagal menghapus kelas", "error"); }
+            try { 
+                if (!id) {
+                    showToast("ID Kelas tidak valid.", "error");
+                    return;
+                }
+                await deleteDoc(doc(db, "walikelas", id)); 
+                showToast("Kelas berhasil dihapus."); 
+            }
+            catch(e) { 
+                console.error(e);
+                showToast("Gagal menghapus kelas.", "error"); 
+            }
+        };
+
+        window.resetAllClasses = async function() {
+            if (!confirm("Apakah Anda yakin ingin menghapus SELURUH data kelas dan wali kelas agar bisa input ulang dari awal?")) return;
+            try {
+                const querySnapshot = await getDocs(collection(db, "walikelas"));
+                const deletePromises = [];
+                querySnapshot.forEach((documentSnap) => {
+                    deletePromises.push(deleteDoc(doc(db, "walikelas", documentSnap.id)));
+                });
+                await Promise.all(deletePromises);
+                showToast("Semua data kelas berhasil dibersihkan!");
+            } catch(err) {
+                showToast("Gagal membersihkan data kelas.", "error");
+            }
         };
 
         window.savePetugasFirebase = async function(data) {
             try {
-                // Gunakan ID kustom petugas (angka) sebagai ID dokumen Firestore agar mudah diedit/dihapus
                 const customId = String(data.petugasId || '').trim();
                 if (!customId) {
                     showToast("ID Petugas wajib diisi angka!", "error");
@@ -1640,7 +1690,7 @@
             const listSiswa = window.dbSiswa || [];
             grid.innerHTML = '';
 
-            const filtered = listWali.filter(w => (w.kelas || '').toLowerCase().includes(query) || (w.nama || '').toLowerCase().includes(query));
+            const filtered = listWali.filter(w => (w.kelas || '').toLowerCase().includes(query) || (w.nama || '').toLowerCase().includes(query) || String(w.classId || '').includes(query));
 
             if (filtered.length === 0) {
                 grid.innerHTML = `
@@ -1665,15 +1715,18 @@
                                     <i class="fa-solid fa-graduation-cap"></i>
                                 </div>
                                 <div>
-                                    <h3 class="font-bold text-slate-800 text-base leading-tight">${w.kelas}</h3>
+                                    <div class="flex items-center gap-2">
+                                        <h3 class="font-bold text-slate-800 text-base leading-tight">${w.kelas}</h3>
+                                        <span class="text-[10px] bg-indigo-200 text-indigo-800 px-1.5 py-0.5 rounded font-mono font-bold">ID: ${w.classId || w.id}</span>
+                                    </div>
                                     <span class="text-[11px] text-slate-500 font-medium">${countSiswa} Siswa Terdaftar</span>
                                 </div>
                             </div>
                             <div class="flex space-x-1">
-                                <button onclick="openModalEditClass('${w.id}', '${w.kelas}', '${w.nama}', '${w.wa}')" class="text-slate-400 hover:text-indigo-600 p-1.5 rounded-lg text-xs" title="Edit">
+                                <button onclick="openModalEditClass('${w.classId || w.id}', '${w.kelas}', '${w.nama}', '${w.wa}')" class="text-slate-400 hover:text-indigo-600 p-1.5 rounded-lg text-xs" title="Edit">
                                     <i class="fa-solid fa-pen-to-square"></i>
                                 </button>
-                                <button onclick="window.deleteWalikelasFirebase('${w.id}')" class="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg text-xs" title="Hapus">
+                                <button onclick="window.deleteWalikelasFirebase('${w.classId || w.id}')" class="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg text-xs" title="Hapus">
                                     <i class="fa-solid fa-trash"></i>
                                 </button>
                             </div>
@@ -1760,7 +1813,7 @@
                     <td class="p-3 text-slate-500">${s.wali || '-'}</td>
                     <td class="p-3 font-mono text-xs text-slate-500">${s.waWali || '-'}</td>
                     <td class="p-3 text-center space-x-1">
-                        <button onclick="generateAndShowQr('${s.nis}', '${s.nama}', '${s.kelas}')" class="bg-indigo-100 hover:bg-indigo-200 text-indigo-700 p-1.5 rounded-lg text-xs" title="Cetak QR Card">
+                        <button onclick="generateAndShowQr('${s.nis}', '${s.nama}', '${s.kelas}', '${s.noAbsen}')" class="bg-indigo-100 hover:bg-indigo-200 text-indigo-700 p-1.5 rounded-lg text-xs" title="Cetak QR Card">
                             <i class="fa-solid fa-qrcode"></i>
                         </button>
                         <button onclick="window.deleteSiswaFirebase('${s.id}')" class="bg-rose-100 hover:bg-rose-200 text-rose-700 p-1.5 rounded-lg text-xs" title="Hapus">
@@ -1773,7 +1826,8 @@
         }
 
         function openModalClass() {
-            document.getElementById('formClassId').value = "";
+            document.getElementById('formClassIdCustom').value = (window.dbWaliKelas || []).length + 1;
+            document.getElementById('formClassIdCustom').disabled = false;
             document.getElementById('formClassName').value = "";
             document.getElementById('formClassWaliNama').value = "";
             document.getElementById('formClassWaliWa').value = "";
@@ -1782,7 +1836,8 @@
         }
 
         function openModalEditClass(id, kelas, nama, wa) {
-            document.getElementById('formClassId').value = id;
+            document.getElementById('formClassIdCustom').value = id;
+            document.getElementById('formClassIdCustom').disabled = true; // ID tidak bisa diubah saat edit agar aman
             document.getElementById('formClassName').value = kelas;
             document.getElementById('formClassWaliNama').value = nama;
             document.getElementById('formClassWaliWa').value = wa;
@@ -1794,18 +1849,21 @@
             if (!currentSelectedClass || currentSelectedClass === 'ALL') return;
             const listWali = window.dbWaliKelas || [];
             const w = listWali.find(item => item.kelas === currentSelectedClass);
-            if (w) openModalEditClass(w.id, w.kelas, w.nama, w.wa);
+            if (w) openModalEditClass(w.classId || w.id, w.kelas, w.nama, w.wa);
         }
 
         function closeModalClass() { document.getElementById('modalClass').classList.add('hidden'); }
 
         function handleSaveClassAndWali(e) {
             e.preventDefault();
-            const id = document.getElementById('formClassId').value;
+            const classId = document.getElementById('formClassIdCustom').value.trim();
             const kelas = document.getElementById('formClassName').value.trim().toUpperCase();
             const nama = document.getElementById('formClassWaliNama').value.trim();
             const wa = formatPhoneNumber(document.getElementById('formClassWaliWa').value.trim());
-            if (window.saveWalikelasFirebase) window.saveWalikelasFirebase({ id, kelas, nama, wa });
+            
+            if (window.saveWalikelasFirebase) {
+                window.saveWalikelasFirebase({ classId, kelas, nama, wa });
+            }
             closeModalClass();
         }
 
@@ -1843,7 +1901,7 @@
             document.getElementById('deleteClassModalDesc').innerText = currentSelectedClass === 'ALL' 
                 ? "Tindakan ini akan menghapus SELURUH data siswa." 
                 : `Tindakan ini akan menghapus seluruh data siswa di Kelas ${currentSelectedClass}.`;
-            document.getElementById('modalDeleteClassStudents').classList.remove('hidden');
+            document.getElementById('modalDeleteClassStudents').classList.add('hidden');
         }
 
         function closeModalDeleteClassStudents() { document.getElementById('modalDeleteClassStudents').classList.add('hidden'); }
@@ -1855,6 +1913,7 @@
             } else {
                 if (window.deleteClassStudentsFirebase) window.deleteClassStudentsFirebase(currentSelectedClass);
             }
+            closeModalDeleteClassStudents();
         }
 
         function triggerImportCSV() { document.getElementById('fileCsvInput').click(); }
