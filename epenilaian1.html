@@ -117,6 +117,10 @@
                     <i class="fa-solid fa-clipboard-user"></i>
                     <span>Rekap Absensi Harian</span>
                 </button>
+                <button onclick="switchTab('penjemputan-rekap')" id="tab-penjemputan-rekap" class="tab-btn flex-1 min-w-[140px] py-2.5 px-3 rounded-lg flex items-center justify-center space-x-2 transition text-slate-600 hover:bg-slate-100">
+                    <i class="fa-solid fa-car-side"></i>
+                    <span>Rekap Penjemputan</span>
+                </button>
                 <button onclick="switchTab('kelas')" id="tab-kelas" class="admin-only tab-btn flex-1 min-w-[140px] py-2.5 px-3 rounded-lg flex items-center justify-center space-x-2 transition text-slate-600 hover:bg-slate-100 hidden">
                     <i class="fa-solid fa-chalkboard-user"></i>
                     <span>Data Kelas & Siswa</span>
@@ -148,11 +152,11 @@
                                     <i class="fa-solid fa-camera text-indigo-600"></i>
                                     <span>Continuous QR Scanner (Absensi & Penjemputan)</span>
                                 </h2>
-                                <p class="text-[11px] text-slate-500">Pagi = Catat Absensi Masuk & Cek Keterlambatan. Siang = Catat Penjemputan.</p>
+                                <p class="text-[11px] text-slate-500">Pagi = Catat Absensi Masuk. Siang = Catat Penjemputan (Maksimal 1x).</p>
                             </div>
                             <div class="flex items-center space-x-2 w-full sm:w-auto">
                                 <label class="text-xs font-semibold text-slate-600">Kamera:</label>
-                                <select id="cameraSelect" class="bg-slate-50 border border-slate-300 rounded-lg text-xs px-2.5 py-1.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                                <select id="cameraSelect" onchange="changeCameraSource()" class="bg-slate-50 border border-slate-300 rounded-lg text-xs px-2.5 py-1.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                                     <option value="environment">Belakang (Utama)</option>
                                     <option value="user">Depan (Selfie)</option>
                                 </select>
@@ -264,6 +268,46 @@
                                 </tr>
                             </thead>
                             <tbody id="tableAbsensiBody" class="divide-y divide-slate-100">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 1.6: REKAP PENJEMPUTAN HARIAN -->
+            <section id="view-penjemputan-rekap" class="hidden space-y-4">
+                <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+                        <div>
+                            <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                                <i class="fa-solid fa-car-side text-indigo-600"></i>
+                                <span>Rekap Data Penjemputan Siswa</span>
+                            </h2>
+                            <p class="text-xs text-slate-500">Daftar siswa yang sudah dijemput pada tanggal terpilih.</p>
+                        </div>
+                        <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+                            <input type="date" id="filterPenjemputanDate" onchange="renderPenjemputanTable()" class="px-3 py-2 border rounded-xl text-xs font-semibold focus:outline-none">
+                            <button onclick="exportPenjemputanExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3.5 py-2.5 rounded-xl flex items-center space-x-1.5 transition">
+                                <i class="fa-solid fa-file-excel"></i>
+                                <span>Export Rekap Penjemputan (.xlsx)</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto rounded-xl border border-slate-200">
+                        <table class="w-full text-left border-collapse text-xs sm:text-sm">
+                            <thead>
+                                <tr class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
+                                    <th class="p-3">NIS</th>
+                                    <th class="p-3">Nama Siswa</th>
+                                    <th class="p-3">Kelas</th>
+                                    <th class="p-3">Jam Dijemput</th>
+                                    <th class="p-3">Status</th>
+                                    <th class="p-3">Petugas Piket</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablePenjemputanBody" class="divide-y divide-slate-100">
                                 <!-- Populated dynamically -->
                             </tbody>
                         </table>
@@ -759,6 +803,7 @@
         let dbWaliKelas = [];
         let dbPetugas = [];
         let dbAbsensi = [];
+        let dbPenjemputan = [];
 
         window.appCredentials = {
             adminUsername: 'admin',
@@ -806,6 +851,14 @@
                 snapshot.forEach(docSnap => dbAbsensi.push({ id: docSnap.id, ...docSnap.data() }));
                 window.dbAbsensi = dbAbsensi;
                 renderAbsensiTable();
+            });
+
+            // Penjemputan Harian
+            onSnapshot(collection(db, "penjemputan"), (snapshot) => {
+                dbPenjemputan = [];
+                snapshot.forEach(docSnap => dbPenjemputan.push({ id: docSnap.id, ...docSnap.data() }));
+                window.dbPenjemputan = dbPenjemputan;
+                renderPenjemputanTable();
             });
 
             // Logs
@@ -1009,6 +1062,12 @@
             } catch(e) { console.error(e); }
         };
 
+        window.addPenjemputanFirebase = async function(penjemputanData) {
+            try {
+                await addDoc(collection(db, "penjemputan"), penjemputanData);
+            } catch(e) { console.error(e); }
+        };
+
         window.addScanLogFirebase = async function(logData) {
             try {
                 await addDoc(collection(db, "logs"), {
@@ -1168,6 +1227,10 @@
             const dateInput = document.getElementById('filterAbsenDate');
             if (dateInput) {
                 dateInput.value = new Date().toISOString().split('T')[0];
+            }
+            const dateInputJemput = document.getElementById('filterPenjemputanDate');
+            if (dateInputJemput) {
+                dateInputJemput.value = new Date().toISOString().split('T')[0];
             }
         });
 
@@ -1331,8 +1394,18 @@
                     document.getElementById('btnStopCam').classList.add('opacity-50', 'cursor-not-allowed');
                     document.getElementById('btnStopCam').disabled = true;
                     document.getElementById('scanLine').classList.add('hidden');
-                });
+                }).catch(err => {});
             }
+        }
+
+        // Fungsi mengganti kamera secara otomatis tanpa harus klik tombol stop manual
+        async function changeCameraSource() {
+            if (html5QrCode && html5QrCode.isScanning) {
+                try {
+                    await html5QrCode.stop();
+                } catch (e) {}
+            }
+            startCamera();
         }
 
         function onQrCodeScanned(decodedText) {
@@ -1444,7 +1517,7 @@
             }
         }
 
-        // 2. PROSES PENJEMPUTAN SISWA
+        // 2. PROSES PENJEMPUTAN SISWA (Dibatasi Maksimal 1x per hari)
         async function processPenjemputanScan(nis) {
             const listSiswa = window.dbSiswa || [];
             const listWali = window.dbWaliKelas || [];
@@ -1455,12 +1528,20 @@
                 return;
             }
 
+            const todayStr = new Date().toISOString().split('T')[0];
+            const existingPenjemputan = (window.dbPenjemputan || []).find(p => p.nis === nis && p.tanggal === todayStr);
+
+            if (existingPenjemputan) {
+                showToast(`Siswa ${siswa.nama} sudah dijemput hari ini (${existingPenjemputan.waktu})!`, "error");
+                return;
+            }
+
             const waliKelas = listWali.find(w => w.kelas === siswa.kelas);
             const waWaliMurid = formatPhoneNumber(siswa.waWali);
             const waWaliKelas = waliKelas ? formatPhoneNumber(waliKelas.wa) : '';
 
             const targetWaList = formatTargetNumbers([waWaliMurid, waWaliKelas].filter(Boolean).join(','));
-            const jamPenjemputan = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB';
+            const jamPenjemputan = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
             
             const currentUser = JSON.parse(sessionStorage.getItem('e_user') || '{}');
             const petugasName = currentUser.name || 'Petugas Piket';
@@ -1475,12 +1556,25 @@
                 statusSend = isSent ? 'terkirim' : 'gagal';
             }
 
+            if (window.addPenjemputanFirebase) {
+                await window.addPenjemputanFirebase({
+                    nis: siswa.nis,
+                    nama: siswa.nama,
+                    kelas: siswa.kelas,
+                    noAbsen: parseInt(siswa.noAbsen) || 999,
+                    tanggal: todayStr,
+                    waktu: jamPenjemputan,
+                    statusPenjemputan: 'Sudah Dijemput',
+                    petugasNama: petugasName
+                });
+            }
+
             if (window.addScanLogFirebase) {
                 window.addScanLogFirebase({
                     tipe: 'penjemputan',
                     nama: siswa.nama,
                     kelas: siswa.kelas,
-                    waktu: jamPenjemputan,
+                    waktu: jamPenjemputan + ' WIB',
                     statusAbsen: 'Dijemput',
                     targetWa: targetWaList || 'Tidak Diatur',
                     statusWa: statusSend,
@@ -1526,6 +1620,42 @@
             });
         }
 
+        function renderPenjemputanTable() {
+            const tbody = document.getElementById('tablePenjemputanBody');
+            if (!tbody) return;
+            const filterDate = document.getElementById('filterPenjemputanDate')?.value || new Date().toISOString().split('T')[0];
+            tbody.innerHTML = '';
+
+            const listPenjemputan = (window.dbPenjemputan || []).filter(p => p.tanggal === filterDate);
+            listPenjemputan.sort((a, b) => {
+                if (a.kelas !== b.kelas) return a.kelas.localeCompare(b.kelas);
+                return (a.noAbsen || 0) - (b.noAbsen || 0);
+            });
+
+            if (listPenjemputan.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-slate-400">Belum ada data penjemputan pada tanggal ${filterDate}.</td></tr>`;
+                return;
+            }
+
+            listPenjemputan.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 transition';
+                tr.innerHTML = `
+                    <td class="p-3 font-mono font-bold text-indigo-700">${item.nis}</td>
+                    <td class="p-3 font-semibold text-slate-800">${item.nama}</td>
+                    <td class="p-3"><span class="bg-indigo-50 text-indigo-700 font-bold px-2.5 py-1 rounded-md text-xs">${item.kelas}</span></td>
+                    <td class="p-3 font-mono text-xs">${item.waktu}</td>
+                    <td class="p-3">
+                        <span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-indigo-100 text-indigo-700">
+                            ${item.statusPenjemputan || 'Sudah Dijemput'}
+                        </span>
+                    </td>
+                    <td class="p-3 text-slate-500 text-xs">${item.petugasNama || 'Piket'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
         function exportAbsensiExcel() {
             const filterDate = document.getElementById('filterAbsenDate')?.value || new Date().toISOString().split('T')[0];
             const listAbsen = (window.dbAbsensi || []).filter(a => a.tanggal === filterDate);
@@ -1546,6 +1676,26 @@
             }
         }
 
+        function exportPenjemputanExcel() {
+            const filterDate = document.getElementById('filterPenjemputanDate')?.value || new Date().toISOString().split('T')[0];
+            const listPenjemputan = (window.dbPenjemputan || []).filter(p => p.tanggal === filterDate);
+            listPenjemputan.sort((a, b) => {
+                if (a.kelas !== b.kelas) return a.kelas.localeCompare(b.kelas);
+                return (a.noAbsen || 0) - (b.noAbsen || 0);
+            });
+
+            if (window.XLSX) {
+                const sheetData = [["No", "NIS", "Nama Siswa", "Kelas", "Jam Dijemput", "Status", "Petugas Piket"]];
+                listPenjemputan.forEach((item, idx) => {
+                    sheetData.push([idx + 1, String(item.nis), item.nama, item.kelas, item.waktu, item.statusPenjemputan || 'Sudah Dijemput', item.petugasNama || 'Piket']);
+                });
+                const ws = XLSX.utils.aoa_to_sheet(sheetData);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Rekap Penjemputan");
+                XLSX.writeFile(wb, `rekap_penjemputan_${filterDate}.xlsx`);
+            }
+        }
+
         // ==========================================
         // TAB SWITCHING CONTROLLER
         // ==========================================
@@ -1558,7 +1708,7 @@
                 tabName = 'kelas';
             }
 
-            const tabs = ['scanner', 'absensi', 'kelas', 'settings', 'personal'];
+            const tabs = ['scanner', 'absensi', 'penjemputan-rekap', 'kelas', 'settings', 'personal'];
             tabs.forEach(t => {
                 const view = document.getElementById(`view-${t}`);
                 const btn = document.getElementById(`tab-${t}`);
@@ -1584,6 +1734,8 @@
                 renderTablePetugas();
             } else if (tabName === 'absensi') {
                 renderAbsensiTable();
+            } else if (tabName === 'penjemputan-rekap') {
+                renderPenjemputanTable();
             }
         }
 
@@ -1837,7 +1989,7 @@
 
         function openModalEditClass(id, kelas, nama, wa) {
             document.getElementById('formClassIdCustom').value = id;
-            document.getElementById('formClassIdCustom').disabled = true; // ID tidak bisa diubah saat edit agar aman
+            document.getElementById('formClassIdCustom').disabled = true;
             document.getElementById('formClassName').value = kelas;
             document.getElementById('formClassWaliNama').value = nama;
             document.getElementById('formClassWaliWa').value = wa;
@@ -1901,7 +2053,7 @@
             document.getElementById('deleteClassModalDesc').innerText = currentSelectedClass === 'ALL' 
                 ? "Tindakan ini akan menghapus SELURUH data siswa." 
                 : `Tindakan ini akan menghapus seluruh data siswa di Kelas ${currentSelectedClass}.`;
-            document.getElementById('modalDeleteClassStudents').classList.add('hidden');
+            document.getElementById('modalDeleteClassStudents').classList.remove('hidden');
         }
 
         function closeModalDeleteClassStudents() { document.getElementById('modalDeleteClassStudents').classList.add('hidden'); }
