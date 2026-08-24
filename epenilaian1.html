@@ -33,7 +33,6 @@
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col pb-16 md:pb-0">
 
-    <!-- LOGIN SCREEN MODAL / OVERLAY -->
     <div id="loginScreen" class="fixed inset-0 bg-indigo-900/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative border border-slate-100">
             <div class="text-center mb-6">
@@ -75,7 +74,6 @@
         </div>
     </div>
 
-    <!-- MAIN APP CONTENT (Hidden before Login) -->
     <div id="appContent" class="hidden flex-col min-h-screen">
         <!-- Header Navigation -->
         <header class="bg-indigo-700 text-white shadow-md sticky top-0 z-40">
@@ -133,6 +131,10 @@
                     <i class="fa-solid fa-sliders"></i>
                     <span>Pengaturan WA Saya</span>
                 </button>
+                <button onclick="switchTab('ganti-wali')" id="tab-ganti-wali" class="piket-only tab-btn flex-1 min-w-[150px] py-2.5 px-3 rounded-lg flex items-center justify-center space-x-2 transition text-slate-600 hover:bg-slate-100">
+                    <i class="fa-solid fa-user-pen"></i>
+                    <span>Ganti No. Wali Kelas</span>
+                </button>
             </div>
 
             <!-- Notification Bar / Feedback -->
@@ -141,7 +143,6 @@
                 <span id="toastMessage" class="text-sm"></span>
             </div>
 
-            <!-- SECTION 1: MODUL PETUGAS PIKET (SCANNER & ABSENSI) -->
             <section id="view-scanner" class="space-y-4">
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <!-- Camera Scan Area -->
@@ -185,7 +186,7 @@
                             </div>
                         </div>
 
-                        <!-- Hardware Barcode Scanner USB Input Receiver (Always Focused for PC Barcode Scanners) -->
+                        <!-- Hardware Barcode Scanner USB Input Receiver -->
                         <div class="w-full mb-3">
                             <div class="relative">
                                 <input type="text" id="hardwareScanInput" placeholder="Klik di sini & scan dengan Barcode Scanner Fisik (USB/Wireless)..." 
@@ -226,7 +227,6 @@
                         </div>
 
                         <div id="scanLogContainer" class="flex-grow overflow-y-auto max-h-[380px] space-y-2 pr-1">
-                            <!-- Empty State Log -->
                             <div id="emptyLog" class="text-center py-8 text-slate-400">
                                 <i class="fa-solid fa-qrcode text-4xl mb-2 text-slate-300"></i>
                                 <p class="text-xs">Belum ada aktivitas scan hari ini.</p>
@@ -236,7 +236,6 @@
                 </div>
             </section>
 
-            <!-- SECTION 1.5: REKAP ABSENSI HARIAN -->
             <section id="view-absensi" class="hidden space-y-4">
                 <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
@@ -269,14 +268,12 @@
                                 </tr>
                             </thead>
                             <tbody id="tableAbsensiBody" class="divide-y divide-slate-100">
-                                <!-- Populated dynamically -->
                             </tbody>
                         </table>
                     </div>
                 </div>
             </section>
 
-            <!-- SECTION 1.6: REKAP PENJEMPUTAN HARIAN -->
             <section id="view-penjemputan-rekap" class="hidden space-y-4">
                 <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
@@ -309,16 +306,13 @@
                                 </tr>
                             </thead>
                             <tbody id="tablePenjemputanBody" class="divide-y divide-slate-100">
-                                <!-- Populated dynamically -->
                             </tbody>
                         </table>
                     </div>
                 </div>
             </section>
 
-            <!-- SECTION 2: DATA KELAS & SISWA (ADMIN ONLY) -->
             <section id="view-kelas" class="admin-only hidden space-y-6">
-                <!-- SUB-VIEW 1: DAFTAR KARTU KELAS (DEFAULT) -->
                 <div id="classListContainer" class="space-y-4">
                     <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200">
                         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
@@ -345,21 +339,17 @@
                             </div>
                         </div>
 
-                        <!-- Search Bar for Classes -->
                         <div class="relative max-w-md mb-6">
                             <input type="text" id="searchClassInput" oninput="renderClassCards()" placeholder="Cari Nama Kelas atau Wali Kelas..." 
                                 class="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                             <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400"></i>
                         </div>
 
-                        <!-- Class Cards Grid Container -->
                         <div id="classGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            <!-- Populated dynamically -->
                         </div>
                     </div>
                 </div>
 
-                <!-- SUB-VIEW 2: DETAIL SISWA DALAM KELAS TERPILIH -->
                 <div id="classDetailContainer" class="hidden space-y-4">
                     <div class="flex justify-between items-center bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
                         <div class="flex items-center space-x-3">
@@ -378,7 +368,6 @@
                         </span>
                     </div>
 
-                    <!-- Wali Kelas Info Banner -->
                     <div class="bg-gradient-to-r from-indigo-700 to-indigo-900 text-white p-4 sm:p-5 rounded-2xl shadow-md flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                         <div>
                             <span class="text-[11px] uppercase tracking-wider text-indigo-200 font-semibold block mb-0.5">Penanggung Jawab Wali Kelas</span>
@@ -394,7 +383,6 @@
                         </button>
                     </div>
 
-                    <!-- Action Bar & Table Data Siswa -->
                     <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200">
                         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-2">
                             <div>
@@ -422,20 +410,17 @@
                             </div>
                         </div>
 
-                        <!-- Excel Format Helper Note -->
                         <div class="mb-4 text-[11px] text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-200 flex items-center gap-2">
                             <i class="fa-solid fa-circle-info text-indigo-500"></i>
                             <span><strong>Info Urutan Absen:</strong> Data siswa tersusun otomatis berdasarkan urutan absen (Nomor Absen / NIS). Ekspor rekap penjemputan kelas akan menyesuaikan urutan presensi absensi harian.</span>
                         </div>
 
-                        <!-- Search Box inside Class Detail -->
                         <div class="relative max-w-md mb-4">
                             <input type="text" id="searchSiswaDetailInput" oninput="renderTableSiswaDetail()" placeholder="Cari Nama Siswa atau NIS..." 
                                 class="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                             <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400"></i>
                         </div>
 
-                        <!-- Table Data Siswa Kelas Ini -->
                         <div class="overflow-x-auto rounded-xl border border-slate-200">
                             <table class="w-full text-left border-collapse text-xs sm:text-sm">
                                 <thead>
@@ -450,7 +435,6 @@
                                     </tr>
                                 </thead>
                                 <tbody id="tableSiswaDetailBody" class="divide-y divide-slate-100">
-                                    <!-- Populated dynamically -->
                                 </tbody>
                             </table>
                         </div>
@@ -458,7 +442,6 @@
                 </div>
             </section>
 
-            <!-- SECTION 3: KELOLA MULTI PETUGAS PIKET (ADMIN ONLY) -->
             <section id="view-settings" class="admin-only hidden space-y-6">
                 <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
@@ -494,13 +477,11 @@
                                 </tr>
                             </thead>
                             <tbody id="tablePetugasBody" class="divide-y divide-slate-100">
-                                <!-- Populated dynamically -->
                             </tbody>
                         </table>
                     </div>
                 </div>
 
-                <!-- ADMIN CREDENTIALS CONFIG -->
                 <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200 max-w-xl mx-auto">
                     <h3 class="font-bold text-slate-800 mb-1 flex items-center space-x-2 text-sm">
                         <i class="fa-solid fa-user-shield text-indigo-600"></i>
@@ -524,7 +505,6 @@
                 </div>
             </section>
 
-            <!-- SECTION 4: PENGATURAN WHATSAPP PRIBADI (PIKET ONLY) -->
             <section id="view-personal" class="piket-only hidden space-y-6">
                 <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200 max-w-xl mx-auto">
                     <h2 class="text-lg font-bold text-slate-800 mb-1 flex items-center space-x-2">
@@ -568,10 +548,45 @@
                 </div>
             </section>
 
+            <section id="view-ganti-wali" class="piket-only hidden space-y-6">
+                <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200 max-w-4xl mx-auto">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
+                        <div>
+                            <h2 class="text-lg font-bold text-slate-800 flex items-center space-x-2">
+                                <i class="fa-solid fa-user-pen text-indigo-600"></i>
+                                <span>Menu Petugas Piket: Ganti Nomor Wali Kelas (Guru Pengganti / Tidak Masuk)</span>
+                            </h2>
+                            <p class="text-xs text-slate-500 mt-0.5">Ubah nomor WhatsApp atau nama Wali Kelas sementara jika guru bersangkutan berhalangan hadir agar notifikasi masuk ke guru piket/pengganti.</p>
+                        </div>
+                    </div>
+
+                    <div class="relative max-w-md mb-4">
+                        <input type="text" id="searchGantiWaliInput" oninput="renderGantiWaliTable()" placeholder="Cari Kelas atau Nama Wali Kelas..." 
+                            class="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400"></i>
+                    </div>
+
+                    <div class="overflow-x-auto rounded-xl border border-slate-200">
+                        <table class="w-full text-left border-collapse text-xs sm:text-sm">
+                            <thead>
+                                <tr class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
+                                    <th class="p-3">ID Kelas</th>
+                                    <th class="p-3">Nama Kelas</th>
+                                    <th class="p-3">Nama Wali Kelas Saat Ini</th>
+                                    <th class="p-3">No. WA Wali Kelas</th>
+                                    <th class="p-3 text-center">Aksi Ganti Guru</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableGantiWaliBody" class="divide-y divide-slate-100">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
         </main>
     </div>
 
-    <!-- MODAL BUAT / EDIT KELAS & WALI KELAS -->
     <div id="modalClass" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
             <button onclick="closeModalClass()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
@@ -606,6 +621,48 @@
                         Simpan Kelas
                     </button>
                     <button type="button" onclick="closeModalClass()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold px-4 py-2.5 rounded-xl transition">
+                        Batal
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL GANTI WALI KELAS OLEH PETUGAS PIKET -->
+    <div id="modalPiketGantiWali" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+            <button onclick="closeModalPiketGantiWali()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <h3 class="font-bold text-slate-800 text-lg mb-1 flex items-center gap-2">
+                <i class="fa-solid fa-user-pen text-indigo-600"></i>
+                <span>Ganti Wali Kelas Sementara</span>
+            </h3>
+            <p id="piketGantiWaliSub" class="text-xs text-slate-500 mb-4">Ubah penanggung jawab wali kelas untuk kelas ini.</p>
+
+            <form onsubmit="handlePiketSaveGantiWali(event)" class="space-y-3 text-xs sm:text-sm">
+                <input type="hidden" id="piketGantiWaliClassId">
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Nama Kelas</label>
+                    <input type="text" id="piketGantiWaliClassName" disabled class="w-full px-3 py-2 bg-slate-100 border rounded-lg text-slate-600 font-bold">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Nama Wali Kelas / Guru Pengganti</label>
+                    <input type="text" id="piketGantiWaliNama" required placeholder="Contoh: Bpk. Guru Pengganti (Piket)"
+                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">No. WA Wali Kelas / Guru Pengganti (Awali 62)</label>
+                    <input type="text" id="piketGantiWaliWa" required placeholder="628..."
+                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none font-mono">
+                    <p class="text-[11px] text-slate-400 mt-1">Notifikasi absensi & penjemputan siswa kelas ini hari ini akan dikirim ke nomor ini.</p>
+                </div>
+
+                <div class="pt-3 flex space-x-2">
+                    <button type="submit" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-xl transition">
+                        Simpan Perubahan Wali Kelas
+                    </button>
+                    <button type="button" onclick="closeModalPiketGantiWali()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold px-4 py-2.5 rounded-xl transition">
                         Batal
                     </button>
                 </div>
@@ -693,7 +750,6 @@
                 <div>
                     <label class="block font-semibold text-slate-700 mb-1">Kelas</label>
                     <select id="formSiswaKelas" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
-                        <!-- Populated dynamically -->
                     </select>
                 </div>
                 <div>
@@ -824,7 +880,7 @@
                 renderTableSiswaDetail();
             });
 
-            // Wali Kelas (Urutkan berdasarkan ID Kelas)
+            // Wali Kelas
             onSnapshot(collection(db, "walikelas"), (snapshot) => {
                 dbWaliKelas = [];
                 snapshot.forEach(docSnap => dbWaliKelas.push({ id: docSnap.id, ...docSnap.data() }));
@@ -836,9 +892,10 @@
                 window.dbWaliKelas = dbWaliKelas;
                 updateClassDropdown();
                 renderClassCards();
+                renderGantiWaliTable();
             });
 
-            // Petugas Piket (Multi Petugas)
+            // Petugas Piket
             onSnapshot(collection(db, "petugas"), (snapshot) => {
                 dbPetugas = [];
                 snapshot.forEach(docSnap => dbPetugas.push({ id: docSnap.id, ...docSnap.data() }));
@@ -931,7 +988,6 @@
             });
         }
 
-        // Firebase Export Functions
         window.saveSiswaFirebase = async function(data) {
             try {
                 if (data.id) await setDoc(doc(db, "siswa", data.id), data);
@@ -966,7 +1022,7 @@
                     kelas: data.kelas,
                     nama: data.nama,
                     wa: data.wa
-                });
+                }, { merge: true });
                 showToast("Data kelas & wali kelas tersimpan!");
             } catch(e) { 
                 console.error(e);
@@ -1212,7 +1268,6 @@
                 document.getElementById('personalToken').value = user.token || '';
                 
                 switchTab('scanner');
-                // Auto focus hardware input for computer barcode scanners
                 setTimeout(() => {
                     const hwInput = document.getElementById('hardwareScanInput');
                     if (hwInput) hwInput.focus();
@@ -1431,7 +1486,6 @@
             }, 2500);
         }
 
-        // Hardware USB Barcode Scanner listener for computers / PCs
         const hwInput = document.getElementById('hardwareScanInput');
         if (hwInput) {
             hwInput.addEventListener('keypress', function(e) {
@@ -1458,7 +1512,6 @@
                 }
             });
             
-            // Keep focus on hardware scanner input when clicking inside scanner container for desktop users
             document.addEventListener('click', function(e) {
                 const activeTab = document.getElementById('view-scanner');
                 if (activeTab && !activeTab.classList.contains('hidden')) {
@@ -1470,7 +1523,6 @@
             });
         }
 
-        // 1. PROSES ABSENSI SISWA & DETEKSI TERLAMBAT
         async function processAbsensiScan(nis) {
             const listSiswa = window.dbSiswa || [];
             const listWali = window.dbWaliKelas || [];
@@ -1543,7 +1595,6 @@
             }
         }
 
-        // 2. PROSES PENJEMPUTAN SISWA (Dibatasi Maksimal 1x per hari)
         async function processPenjemputanScan(nis) {
             const listSiswa = window.dbSiswa || [];
             const listWali = window.dbWaliKelas || [];
@@ -1730,11 +1781,11 @@
             
             if (savedUser.role === 'piket' && (tabName === 'kelas' || tabName === 'settings')) {
                 tabName = 'scanner';
-            } else if (savedUser.role === 'admin' && tabName === 'personal') {
+            } else if (savedUser.role === 'admin' && (tabName === 'personal' || tabName === 'ganti-wali')) {
                 tabName = 'kelas';
             }
 
-            const tabs = ['scanner', 'absensi', 'penjemputan-rekap', 'kelas', 'settings', 'personal'];
+            const tabs = ['scanner', 'absensi', 'penjemputan-rekap', 'kelas', 'settings', 'personal', 'ganti-wali'];
             tabs.forEach(t => {
                 const view = document.getElementById(`view-${t}`);
                 const btn = document.getElementById(`tab-${t}`);
@@ -1767,6 +1818,84 @@
                 renderAbsensiTable();
             } else if (tabName === 'penjemputan-rekap') {
                 renderPenjemputanTable();
+            } else if (tabName === 'ganti-wali') {
+                renderGantiWaliTable();
+            }
+        }
+
+        // ==========================================
+        // MENU KHUSUS PETUGAS PIKET: GANTI NOMOR WALI KELAS
+        // ==========================================
+        function renderGantiWaliTable() {
+            const tbody = document.getElementById('tableGantiWaliBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            const keyword = (document.getElementById('searchGantiWaliInput')?.value || '').toLowerCase();
+            const listWali = (window.dbWaliKelas || []).filter(w => 
+                (w.kelas || '').toLowerCase().includes(keyword) || 
+                (w.nama || '').toLowerCase().includes(keyword)
+            );
+
+            if (listWali.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-400">Belum ada data kelas atau wali kelas terdaftar.</td></tr>`;
+                return;
+            }
+
+            listWali.forEach(w => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 transition';
+                tr.innerHTML = `
+                    <td class="p-3 font-mono font-bold text-indigo-700">${w.classId || w.id || '-'}</td>
+                    <td class="p-3 font-bold text-slate-800"><span class="bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-md text-xs">${w.kelas}</span></td>
+                    <td class="p-3 font-semibold text-slate-700">${w.nama}</td>
+                    <td class="p-3 font-mono text-emerald-700 font-semibold flex items-center gap-1.5"><i class="fa-brands fa-whatsapp text-emerald-500"></i> ${w.wa || '-'}</td>
+                    <td class="p-3 text-center">
+                        <button onclick="openModalPiketGantiWali('${w.id || w.classId}', '${w.kelas}', '${w.nama}', '${w.wa}')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm transition flex items-center justify-center gap-1.5 mx-auto">
+                            <i class="fa-solid fa-user-pen"></i> Ganti Guru / No. WA
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function openModalPiketGantiWali(classId, kelasName, waliName, waliWa) {
+            document.getElementById('piketGantiWaliClassId').value = classId;
+            document.getElementById('piketGantiWaliClassName').value = kelasName;
+            document.getElementById('piketGantiWaliNama').value = waliName;
+            document.getElementById('piketGantiWaliWa').value = waliWa;
+            document.getElementById('piketGantiWaliSub').innerText = `Ubah kontak wali kelas ${kelasName} untuk penanganan guru piket hari ini.`;
+            document.getElementById('modalPiketGantiWali').classList.remove('hidden');
+        }
+
+        function closeModalPiketGantiWali() {
+            document.getElementById('modalPiketGantiWali').classList.add('hidden');
+        }
+
+        async function handlePiketSaveGantiWali(e) {
+            e.preventDefault();
+            const classId = document.getElementById('piketGantiWaliClassId').value;
+            const kelasName = document.getElementById('piketGantiWaliClassName').value;
+            const newNama = document.getElementById('piketGantiWaliNama').value.trim();
+            const newWa = formatPhoneNumber(document.getElementById('piketGantiWaliWa').value.trim());
+
+            if (!classId) return;
+
+            try {
+                if (window.saveWalikelasFirebase) {
+                    await window.saveWalikelasFirebase({
+                        classId: classId,
+                        kelas: kelasName,
+                        nama: newNama,
+                        wa: newWa
+                    });
+                }
+                showToast(`Nomor wali kelas ${kelasName} berhasil diperbarui!`, "success");
+                closeModalPiketGantiWali();
+                renderGantiWaliTable();
+            } catch(err) {
+                showToast("Gagal memperbarui nomor wali kelas.", "error");
             }
         }
 
@@ -1833,7 +1962,7 @@
             document.getElementById('modalPetugas').classList.add('hidden');
         }
 
-        function handleSavePetugas(e) {
+        async function handleSavePetugas(e) {
             e.preventDefault();
             const petugasId = document.getElementById('formPetugasId').value.trim();
             const nama = document.getElementById('formPetugasNama').value.trim();
@@ -1843,7 +1972,7 @@
             const token = document.getElementById('formPetugasToken').value.trim();
 
             if (window.savePetugasFirebase) {
-                window.savePetugasFirebase({ id: petugasId, petugasId, nama, username, password, sender, token });
+                await window.savePetugasFirebase({ petugasId, nama, username, password, sender, token });
             }
             closeModalPetugas();
         }
@@ -1852,75 +1981,63 @@
             e.preventDefault();
             const u = document.getElementById('adminUsernameInput').value.trim();
             const p = document.getElementById('adminPasswordInput').value.trim();
-
-            if (!u || !p) {
-                showToast("Username dan password tidak boleh kosong!", "error");
-                return;
-            }
-
-            window.appCredentials = { adminUsername: u, adminPassword: p };
+            if (!u || !p) return;
+            window.appCredentials.adminUsername = u;
+            window.appCredentials.adminPassword = p;
             if (window.saveSettingsFirebase) {
                 window.saveSettingsFirebase({ adminUsername: u, adminPassword: p });
             }
-            showToast("Kredensial Admin berhasil diperbarui!", "success");
+            showToast("Kredensial Admin Utama berhasil diperbarui!", "success");
         }
 
         // ==========================================
-        // ADMIN: KELOLA KELAS & SISWA
+        // ADMIN: KELOLA KELAS & WALI KELAS
         // ==========================================
         function renderClassCards() {
             const grid = document.getElementById('classGrid');
             if (!grid) return;
             grid.innerHTML = '';
 
-            const listWali = window.dbWaliKelas || [];
-            const listSiswa = window.dbSiswa || [];
-            const searchVal = (document.getElementById('searchClassInput')?.value || '').toLowerCase();
-
-            const filtered = listWali.filter(w => 
-                (w.kelas || '').toLowerCase().includes(searchVal) || 
-                (w.nama || '').toLowerCase().includes(searchVal)
+            const keyword = (document.getElementById('searchClassInput')?.value || '').toLowerCase();
+            const listWali = (window.dbWaliKelas || []).filter(w => 
+                (w.kelas || '').toLowerCase().includes(keyword) || 
+                (w.nama || '').toLowerCase().includes(keyword)
             );
+            const listSiswa = window.dbSiswa || [];
 
-            if (filtered.length === 0) {
-                grid.innerHTML = `
-                    <div class="col-span-full text-center py-10 bg-slate-50 rounded-2xl border border-dashed border-slate-300 text-slate-400">
-                        <i class="fa-solid fa-folder-open text-4xl mb-2 text-slate-300"></i>
-                        <p class="text-xs">Belum ada kelas yang terdaftar. Klik "Buat Kelas Baru".</p>
-                    </div>`;
+            if (listWali.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center py-10 text-slate-400"><i class="fa-solid fa-folder-open text-4xl mb-2 text-slate-300"></i><p class="text-xs">Belum ada data kelas yang dibuat.</p></div>`;
                 return;
             }
 
-            filtered.forEach(w => {
-                const countSiswa = listSiswa.filter(s => s.kelas === w.kelas).length;
+            listWali.forEach(w => {
+                const siswaCount = listSiswa.filter(s => s.kelas === w.kelas).length;
                 const card = document.createElement('div');
-                card.className = "bg-white p-5 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md transition flex flex-col justify-between";
+                card.className = "bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition flex flex-col justify-between";
                 card.innerHTML = `
                     <div>
                         <div class="flex justify-between items-start mb-3">
-                            <div>
-                                <span class="text-[10px] uppercase tracking-wider font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-md">ID: ${w.classId || w.id || '-'}</span>
-                                <h3 class="text-xl font-bold text-slate-800 mt-2">Kelas ${w.kelas}</h3>
+                            <span class="bg-indigo-100 text-indigo-800 font-bold px-3 py-1 rounded-xl text-xs uppercase tracking-wider">${w.kelas}</span>
+                            <div class="flex space-x-1">
+                                <button onclick="openModalEditClass('${w.classId || w.id}', '${w.kelas}', '${w.nama}', '${w.wa}')" class="bg-slate-100 hover:bg-slate-200 text-slate-600 p-2 rounded-lg text-xs" title="Edit Kelas">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </button>
+                                <button onclick="window.deleteWalikelasFirebase('${w.classId || w.id}')" class="bg-rose-100 hover:bg-rose-200 text-rose-600 p-2 rounded-lg text-xs" title="Hapus Kelas">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
                             </div>
-                            <span class="bg-indigo-100 text-indigo-800 font-bold text-xs px-2.5 py-1 rounded-full">${countSiswa} Siswa</span>
                         </div>
-                        <div class="space-y-1.5 text-xs text-slate-600 mb-4 pt-2 border-t">
-                            <p class="font-semibold text-slate-800 flex items-center gap-1.5">
-                                <i class="fa-solid fa-chalkboard-user text-indigo-500"></i>
-                                <span>${w.nama}</span>
-                            </p>
-                            <p class="font-mono text-slate-500 flex items-center gap-1.5">
-                                <i class="fa-brands fa-whatsapp text-emerald-500"></i>
-                                <span>${w.wa || '-'}</span>
-                            </p>
-                        </div>
+                        <h3 class="font-bold text-slate-800 text-base mb-1">${w.nama}</h3>
+                        <p class="text-xs text-slate-500 flex items-center gap-1.5 font-mono mb-4">
+                            <i class="fa-brands fa-whatsapp text-emerald-500"></i>
+                            <span>${w.wa}</span>
+                        </p>
                     </div>
-                    <div class="flex items-center gap-2 pt-3 border-t">
-                        <button onclick="openClassDetailView('${w.kelas}')" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold py-2 rounded-xl transition text-center">
-                            <i class="fa-solid fa-users"></i> Kelola Siswa
-                        </button>
-                        <button onclick="window.deleteWalikelasFirebase('${w.classId || w.id || ''}')" class="bg-rose-50 hover:bg-rose-100 text-rose-600 p-2 rounded-xl text-xs transition" title="Hapus Kelas">
-                            <i class="fa-solid fa-trash"></i>
+                    <div class="pt-3 border-t border-slate-100 flex justify-between items-center">
+                        <span class="text-xs text-slate-500 font-semibold"><i class="fa-solid fa-user-group text-indigo-600 mr-1"></i> ${siswaCount} Siswa</span>
+                        <button onclick="openClassDetail('${w.kelas}')" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-3.5 py-2 rounded-xl transition flex items-center space-x-1.5">
+                            <span>Kelola Siswa</span>
+                            <i class="fa-solid fa-arrow-right"></i>
                         </button>
                     </div>
                 `;
@@ -1933,7 +2050,16 @@
             document.getElementById('formClassName').value = "";
             document.getElementById('formClassWaliNama').value = "";
             document.getElementById('formClassWaliWa').value = "";
-            document.getElementById('modalClassTitle').innerText = "Buat Kelas & Wali Kelas Baru";
+            document.getElementById('modalClassTitle').innerText = "Buat Kelas Baru";
+            document.getElementById('modalClass').classList.remove('hidden');
+        }
+
+        function openModalEditClass(id, kelas, nama, wa) {
+            document.getElementById('formClassIdCustom').value = id;
+            document.getElementById('formClassName').value = kelas;
+            document.getElementById('formClassWaliNama').value = nama;
+            document.getElementById('formClassWaliWa').value = wa;
+            document.getElementById('modalClassTitle').innerText = "Edit Info Kelas & Wali Kelas";
             document.getElementById('modalClass').classList.remove('hidden');
         }
 
@@ -1941,7 +2067,7 @@
             document.getElementById('modalClass').classList.add('hidden');
         }
 
-        function handleSaveClassAndWali(e) {
+        async function handleSaveClassAndWali(e) {
             e.preventDefault();
             const classId = document.getElementById('formClassIdCustom').value.trim();
             const kelas = document.getElementById('formClassName').value.trim().toUpperCase();
@@ -1949,26 +2075,25 @@
             const wa = formatPhoneNumber(document.getElementById('formClassWaliWa').value.trim());
 
             if (window.saveWalikelasFirebase) {
-                window.saveWalikelasFirebase({ classId, kelas, nama, wa });
+                await window.saveWalikelasFirebase({ classId, kelas, nama, wa });
             }
             closeModalClass();
         }
 
-        function openClassDetailView(className) {
-            currentSelectedClass = className;
+        // ==========================================
+        // ADMIN: KELOLA SISWA DALAM KELAS
+        // ==========================================
+        function openClassDetail(kelasName) {
+            currentSelectedClass = kelasName;
             document.getElementById('classListContainer').classList.add('hidden');
             document.getElementById('classDetailContainer').classList.remove('hidden');
-            document.getElementById('selectedClassName').innerText = `Kelas ${className}`;
+            document.getElementById('selectedClassName').innerText = `Kelas ${kelasName}`;
 
-            const wali = (window.dbWaliKelas || []).find(w => w.kelas === className);
+            const wali = (window.dbWaliKelas || []).find(w => w.kelas === kelasName);
             if (wali) {
                 document.getElementById('selectedClassWaliNama').innerText = wali.nama;
-                document.getElementById('selectedClassWaliWa').innerHTML = `<i class="fa-brands fa-whatsapp text-emerald-400 text-sm"></i><span>${wali.wa}</span>`;
-            } else {
-                document.getElementById('selectedClassWaliNama').innerText = 'Belum Diatur';
-                document.getElementById('selectedClassWaliWa').innerText = '-';
+                document.getElementById('selectedClassWaliWa').innerHTML = `<i class="fa-brands fa-whatsapp text-emerald-400 text-sm"></i> <span>${wali.wa}</span>`;
             }
-
             renderTableSiswaDetail();
         }
 
@@ -1976,61 +2101,67 @@
             currentSelectedClass = null;
             document.getElementById('classDetailContainer').classList.add('hidden');
             document.getElementById('classListContainer').classList.remove('hidden');
+            renderClassCards();
         }
 
         function openAllStudentsView() {
             currentSelectedClass = "SEMUA";
             document.getElementById('classListContainer').classList.add('hidden');
             document.getElementById('classDetailContainer').classList.remove('hidden');
-            document.getElementById('selectedClassName').innerText = "Semua Kelas (Siswa Terdaftar)";
-            document.getElementById('selectedClassWaliNama').innerText = "Multi Wali Kelas";
-            document.getElementById('selectedClassWaliWa').innerText = "-";
+            document.getElementById('selectedClassName').innerText = "Semua Siswa Terdaftar";
+            document.getElementById('selectedClassWaliNama').innerText = "Multi Kelas";
+            document.getElementById('selectedClassWaliWa').innerHTML = `<span>Menampilkan seluruh siswa</span>`;
             renderTableSiswaDetail();
+        }
+
+        function openModalEditSelectedClass() {
+            if (!currentSelectedClass || currentSelectedClass === "SEMUA") return;
+            const wali = (window.dbWaliKelas || []).find(w => w.kelas === currentSelectedClass);
+            if (wali) {
+                openModalEditClass(wali.classId || wali.id, wali.kelas, wali.nama, wali.wa);
+            }
         }
 
         function renderTableSiswaDetail() {
             const tbody = document.getElementById('tableSiswaDetailBody');
-            if (!tbody) return;
+            if (!tbody || !currentSelectedClass) return;
             tbody.innerHTML = '';
 
-            const listSiswa = window.dbSiswa || [];
-            const searchVal = (document.getElementById('searchSiswaDetailInput')?.value || '').toLowerCase();
-
-            let filtered = listSiswa;
-            if (currentSelectedClass && currentSelectedClass !== "SEMUA") {
-                filtered = listSiswa.filter(s => s.kelas === currentSelectedClass);
+            const keyword = (document.getElementById('searchSiswaDetailInput')?.value || '').toLowerCase();
+            let listSiswa = window.dbSiswa || [];
+            
+            if (currentSelectedClass !== "SEMUA") {
+                listSiswa = listSiswa.filter(s => s.kelas === currentSelectedClass);
             }
 
-            filtered = filtered.filter(s => 
-                (s.nama || '').toLowerCase().includes(searchVal) || 
-                (s.nis || '').toLowerCase().includes(searchVal)
+            listSiswa = listSiswa.filter(s => 
+                (s.nama || '').toLowerCase().includes(keyword) || 
+                (s.nis || '').toLowerCase().includes(keyword)
             );
 
-            filtered.sort((a, b) => (parseInt(a.noAbsen) || 999) - (parseInt(b.noAbsen) || 999));
+            listSiswa.sort((a, b) => (parseInt(a.noAbsen) || 999) - (parseInt(b.noAbsen) || 999));
+            document.getElementById('selectedClassBadge').innerText = `${listSiswa.length} Siswa`;
 
-            const badge = document.getElementById('selectedClassBadge');
-            if (badge) badge.innerText = `${filtered.length} Siswa`;
-
-            if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-slate-400">Belum ada data siswa. Silakan tambah manual atau import Excel.</td></tr>`;
+            if (listSiswa.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-slate-400">Belum ada data siswa.</td></tr>`;
                 return;
             }
 
-            filtered.forEach(s => {
+            listSiswa.forEach(s => {
                 const tr = document.createElement('tr');
                 tr.className = 'hover:bg-slate-50 transition';
                 tr.innerHTML = `
-                    <td class="p-3 font-mono font-bold text-indigo-700">${s.noAbsen || '-'}</td>
-                    <td class="p-3 font-mono font-semibold text-slate-800">${s.nis}</td>
-                    <td class="p-3 font-bold text-slate-800">${s.nama}</td>
+                    <td class="p-3 font-mono font-bold text-center bg-slate-50/50">${s.noAbsen || '-'}</td>
+                    <td class="p-3 font-mono font-bold text-indigo-700">${s.nis}</td>
+                    <td class="p-3 font-semibold text-slate-800">${s.nama}</td>
                     <td class="p-3"><span class="bg-indigo-50 text-indigo-700 font-bold px-2 py-0.5 rounded text-xs">${s.kelas}</span></td>
                     <td class="p-3 text-slate-600">${s.wali || '-'}</td>
-                    <td class="p-3 font-mono text-xs text-slate-500">${s.waWali || '-'}</td>
+                    <td class="p-3 font-mono text-xs text-slate-600">${s.waWali || '-'}</td>
                     <td class="p-3 text-center space-x-1">
-                        <button onclick="openModalQrCode('${s.nis}', '${s.nama}', '${s.kelas}')" class="bg-indigo-100 hover:bg-indigo-200 text-indigo-700 p-1.5 rounded-lg text-xs" title="Cetak Kartu QR/Barcode">
+                        <button onclick="openModalQrCode('${s.nis}', '${s.nama}', '${s.kelas}')" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-700 p-1.5 rounded-lg text-xs" title="Cetak QR / Barcode">
                             <i class="fa-solid fa-qrcode"></i>
                         </button>
-                        <button onclick="openModalEditSiswa('${s.id}', '${s.noAbsen || ''}', '${s.nis}', '${s.nama}', '${s.kelas}', '${s.wali || ''}', '${s.waWali || ''}')" class="bg-amber-100 hover:bg-amber-200 text-amber-700 p-1.5 rounded-lg text-xs" title="Edit Siswa">
+                        <button onclick="openModalEditSiswa('${s.id}', '${s.noAbsen || 1}', '${s.nis}', '${s.nama}', '${s.kelas}', '${s.wali || ''}', '${s.waWali || ''}')" class="bg-indigo-100 hover:bg-indigo-200 text-indigo-700 p-1.5 rounded-lg text-xs" title="Edit">
                             <i class="fa-solid fa-pen-to-square"></i>
                         </button>
                         <button onclick="window.deleteSiswaFirebase('${s.id}')" class="bg-rose-100 hover:bg-rose-200 text-rose-700 p-1.5 rounded-lg text-xs" title="Hapus">
@@ -2044,15 +2175,16 @@
 
         function openModalTambahSiswaInClass() {
             document.getElementById('formSiswaId').value = "";
-            document.getElementById('formSiswaNoAbsen').value = (window.dbSiswa || []).length + 1;
+            document.getElementById('formSiswaNoAbsen').value = (window.dbSiswa || []).filter(s => s.kelas === currentSelectedClass).length + 1;
             document.getElementById('formSiswaNIS').value = "";
             document.getElementById('formSiswaNama').value = "";
-            if (currentSelectedClass && currentSelectedClass !== "SEMUA") {
-                document.getElementById('formSiswaKelas').value = currentSelectedClass;
-            }
             document.getElementById('formSiswaWali').value = "";
             document.getElementById('formSiswaWaWali').value = "";
-            document.getElementById('modalSiswaTitle').innerText = "Tambah Data Siswa";
+            const selectKelas = document.getElementById('formSiswaKelas');
+            if (currentSelectedClass && currentSelectedClass !== "SEMUA") {
+                selectKelas.value = currentSelectedClass;
+            }
+            document.getElementById('modalSiswaTitle').innerText = "Tambah Siswa Baru";
             document.getElementById('modalSiswa').classList.remove('hidden');
         }
 
@@ -2072,47 +2204,27 @@
             document.getElementById('modalSiswa').classList.add('hidden');
         }
 
-        function handleSaveSiswa(e) {
+        async function handleSaveSiswa(e) {
             e.preventDefault();
             const id = document.getElementById('formSiswaId').value;
-            const noAbsen = document.getElementById('formSiswaNoAbsen').value.trim();
+            const noAbsen = parseInt(document.getElementById('formSiswaNoAbsen').value) || 1;
             const nis = document.getElementById('formSiswaNIS').value.trim();
             const nama = document.getElementById('formSiswaNama').value.trim();
-            const kelas = document.getElementById('formSiswaKelas').value.trim();
+            const kelas = document.getElementById('formSiswaKelas').value;
             const wali = document.getElementById('formSiswaWali').value.trim();
             const waWali = formatPhoneNumber(document.getElementById('formSiswaWaWali').value.trim());
 
-            const siswaData = {
-                noAbsen: parseInt(noAbsen) || 1,
-                nis,
-                nama,
-                kelas,
-                wali,
-                waWali
-            };
+            const siswaData = { noAbsen, nis, nama, kelas, wali, waWali };
             if (id) siswaData.id = id;
 
             if (window.saveSiswaFirebase) {
-                window.saveSiswaFirebase(siswaData);
+                await window.saveSiswaFirebase(siswaData);
             }
             closeModalSiswa();
         }
 
-        function openModalEditSelectedClass() {
-            if (!currentSelectedClass) return;
-            const wali = (window.dbWaliKelas || []).find(w => w.kelas === currentSelectedClass);
-            if (wali) {
-                document.getElementById('formClassIdCustom').value = wali.classId || wali.id || '';
-                document.getElementById('formClassName').value = wali.kelas;
-                document.getElementById('formClassWaliNama').value = wali.nama;
-                document.getElementById('formClassWaliWa').value = wali.wa;
-                document.getElementById('modalClassTitle').innerText = "Edit Info Wali Kelas";
-                document.getElementById('modalClass').classList.remove('hidden');
-            }
-        }
-
         function openModalDeleteClassStudents() {
-            if (!currentSelectedClass) return;
+            if (!currentSelectedClass || currentSelectedClass === "SEMUA") return;
             document.getElementById('deleteClassModalDesc').innerText = `Tindakan ini akan menghapus seluruh data siswa di kelas ${currentSelectedClass} dari Firebase.`;
             document.getElementById('modalDeleteClassStudents').classList.remove('hidden');
         }
@@ -2121,43 +2233,17 @@
             document.getElementById('modalDeleteClassStudents').classList.add('hidden');
         }
 
-        function confirmDeleteStudentsInClass() {
-            if (currentSelectedClass && window.deleteClassStudentsFirebase) {
-                window.deleteClassStudentsFirebase(currentSelectedClass);
+        async function confirmDeleteStudentsInClass() {
+            if (currentSelectedClass && currentSelectedClass !== "SEMUA") {
+                if (window.deleteClassStudentsFirebase) {
+                    await window.deleteClassStudentsFirebase(currentSelectedClass);
+                }
+                closeModalDeleteClassStudents();
             }
-            closeModalDeleteClassStudents();
         }
 
         // ==========================================
-        // QR CODE GENERATOR & PRINT CARD
-        // ==========================================
-        let qrCodeInstance = null;
-        function openModalQrCode(nis, nama, kelas) {
-            document.getElementById('qrCardNama').innerText = nama;
-            document.getElementById('qrCardNIS').innerText = `NIS / Barcode ID: ${nis}`;
-            document.getElementById('qrCardKelas').innerText = `Kelas: ${kelas}`;
-
-            const target = document.getElementById('qrcodeTarget');
-            target.innerHTML = '';
-            
-            qrCodeInstance = new QRCode(target, {
-                text: nis,
-                width: 140,
-                height: 140,
-                colorDark: "#000000",
-                colorLight: "#ffffff",
-                correctLevel: QRCode.CorrectLevel.H
-            });
-
-            document.getElementById('modalPrintQr').classList.remove('hidden');
-        }
-
-        function closeModalQr() {
-            document.getElementById('modalPrintQr').classList.add('hidden');
-        }
-
-        // ==========================================
-        // EXCEL IMPORT & EXPORT
+        // EXCEL IMPORT & EXPORT ENGINE (Sesuai Urutan Absen)
         // ==========================================
         function triggerImportCSV() {
             document.getElementById('fileCsvInput').click();
@@ -2168,66 +2254,123 @@
             if (!file) return;
 
             const reader = new FileReader();
-            reader.onload = async function(e) {
+            reader.onload = function(e) {
                 try {
                     const data = new Uint8Array(e.target.result);
                     const workbook = XLSX.read(data, { type: 'array' });
                     const firstSheetName = workbook.SheetNames[0];
                     const worksheet = workbook.Sheets[firstSheetName];
-                    const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    const jsonRows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+                    if (jsonRows.length < 2) {
+                        showToast("Format file Excel kosong atau tidak valid.", "error");
+                        return;
+                    }
+
+                    // Deteksi Header Columns
+                    const header = jsonRows[0].map(h => String(h).toLowerCase().trim());
+                    let idxNo = header.findIndex(h => h.includes('no') || h.includes('absen'));
+                    let idxNis = header.findIndex(h => h.includes('nis') || h.includes('barcode') || h.includes('id'));
+                    let idxNama = header.findIndex(h => h.includes('nama') || h.includes('siswa'));
+                    let idxKelas = header.findIndex(h => h.includes('kelas') || h.includes('rombel'));
+                    let idxWali = header.findIndex(h => h.includes('wali') || h.includes('ortu') || h.includes('orang tua'));
+                    let idxWa = header.findIndex(h => h.includes('wa') || h.includes('telp') || h.includes('phone') || h.includes('hp'));
+
+                    if (idxNis === -1) idxNis = 0;
+                    if (idxNama === -1) idxNama = 1;
 
                     let importedCount = 0;
-                    for (let i = 1; i < json.length; i++) {
-                        const row = json[i];
-                        if (row && row.length >= 2) {
-                            const noAbsen = row[0] ? parseInt(row[0]) : i;
-                            const nis = String(row[1] || '').trim();
-                            const nama = String(row[2] || '').trim();
-                            const kelas = String(row[3] || currentSelectedClass || 'Gema').trim().toUpperCase();
-                            const wali = String(row[4] || '').trim();
-                            const waWali = formatPhoneNumber(String(row[5] || '').trim());
+                    for (let i = 1; i < jsonRows.length; i++) {
+                        const row = jsonRows[i];
+                        if (!row || row.length === 0) continue;
 
-                            if (nis && nama) {
-                                await window.saveSiswaFirebase({
-                                    noAbsen,
-                                    nis,
-                                    nama,
-                                    kelas,
-                                    wali,
-                                    waWali
-                                });
-                                importedCount++;
-                            }
+                        const nis = String(row[idxNis !== -1 ? idxNis : 0] || '').trim();
+                        const nama = String(row[idxNama !== -1 ? idxNama : 1] || '').trim();
+                        if (!nis || !nama) continue;
+
+                        const noAbsen = idxNo !== -1 ? (parseInt(row[idxNo]) || i) : i;
+                        const kelas = idxKelas !== -1 && row[idxKelas] ? String(row[idxKelas]).trim().toUpperCase() : (currentSelectedClass !== "SEMUA" ? currentSelectedClass : "X");
+                        const wali = idxWali !== -1 ? String(row[idxWali] || '').trim() : '';
+                        const waWali = idxWa !== -1 ? formatPhoneNumber(String(row[idxWa] || '')) : '';
+
+                        if (window.saveSiswaFirebase) {
+                            window.saveSiswaFirebase({ noAbsen, nis, nama, kelas, wali, waWali });
                         }
+                        importedCount++;
                     }
-                    showToast(`Berhasil mengimpor ${importedCount} data siswa!`, "success");
-                } catch(err) {
-                    showToast("Gagal membaca file Excel/CSV. Pastikan format kolom benar.", "error");
+
+                    showToast(`Berhasil mengimpor ${importedCount} data siswa sesuai urutan absen!`, "success");
+                    event.target.value = '';
+                } catch (err) {
+                    showToast("Gagal membaca file Excel. Pastikan format benar.", "error");
                 }
-                event.target.value = '';
             };
             reader.readAsArrayBuffer(file);
         }
 
         function exportCurrentClassPenjemputanExcel() {
             if (!currentSelectedClass || currentSelectedClass === "SEMUA") {
-                showToast("Pilih kelas spesifik terlebih dahulu untuk ekspor rekap absen/penjemputan kelas.", "error");
+                showToast("Pilih kelas spesifik terlebih dahulu untuk ekspor rekap sesuai urutan absen.", "error");
                 return;
             }
 
             const listSiswa = (window.dbSiswa || []).filter(s => s.kelas === currentSelectedClass);
             listSiswa.sort((a, b) => (parseInt(a.noAbsen) || 999) - (parseInt(b.noAbsen) || 999));
 
+            const todayStr = new Date().toISOString().split('T')[0];
+            const listPenjemputan = (window.dbPenjemputan || []).filter(p => p.tanggal === todayStr && p.kelas === currentSelectedClass);
+
             if (window.XLSX) {
-                const sheetData = [["No Absen", "NIS", "Nama Siswa", "Kelas", "Nama Wali", "No WA Wali"]];
-                listSiswa.forEach(s => {
-                    sheetData.push([s.noAbsen || '', String(s.nis), s.nama, s.kelas, s.wali || '', s.waWali || '']);
+                const sheetData = [["No Absen", "NIS", "Nama Siswa", "Kelas", "Status Penjemputan", "Jam Dijemput", "Petugas Piket"]];
+                listSiswa.forEach((s) => {
+                    const jemput = listPenjemputan.find(p => p.nis === s.nis);
+                    sheetData.push([
+                        s.noAbsen || '-',
+                        String(s.nis),
+                        s.nama,
+                        s.kelas,
+                        jemput ? 'Sudah Dijemput' : 'Belum Dijemput',
+                        jemput ? jemput.waktu : '-',
+                        jemput ? (jemput.petugasNama || 'Piket') : '-'
+                    ]);
                 });
+
                 const ws = XLSX.utils.aoa_to_sheet(sheetData);
                 const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, `Kelas_${currentSelectedClass}`);
-                XLSX.writeFile(wb, `rekap_siswa_kelas_${currentSelectedClass}.xlsx`);
+                XLSX.utils.book_append_sheet(wb, ws, `Rekap ${currentSelectedClass}`);
+                XLSX.writeFile(wb, `rekap_penjemputan_kelas_${currentSelectedClass}_${todayStr}.xlsx`);
             }
+        }
+
+        // ==========================================
+        // QR CODE GENERATOR & PRINT CARD MODAL
+        // ==========================================
+        let qrCodeInstance = null;
+
+        function openModalQrCode(nis, nama, kelas) {
+            document.getElementById('qrCardNama').innerText = nama;
+            document.getElementById('qrCardNIS').innerText = `NIS: ${nis}`;
+            document.getElementById('qrCardKelas').innerText = `Kelas: ${kelas}`;
+
+            const container = document.getElementById('qrcodeTarget');
+            container.innerHTML = '';
+
+            if (window.QRCode) {
+                qrCodeInstance = new QRCode(container, {
+                    text: nis,
+                    width: 140,
+                    height: 140,
+                    colorDark: "#0f172a",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+            }
+
+            document.getElementById('modalPrintQr').classList.remove('hidden');
+        }
+
+        function closeModalQr() {
+            document.getElementById('modalPrintQr').classList.add('hidden');
         }
     </script>
 </body>
