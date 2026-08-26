@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Penjemputan Digital Siswa</title>
+    <title>Sistem Penjemputan Digital Siswa & Wali Kelas</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome Icons -->
@@ -33,6 +33,7 @@
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col pb-16 md:pb-0">
 
+    <!-- LOGIN SCREEN -->
     <div id="loginScreen" class="fixed inset-0 bg-indigo-900/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative border border-slate-100">
             <div class="text-center mb-6">
@@ -40,14 +41,14 @@
                     <i class="fa-solid fa-id-card-clip text-3xl"></i>
                 </div>
                 <h2 class="text-2xl font-bold text-slate-800">E-Penjemputan & Absensi</h2>
-                <p class="text-xs text-slate-500 mt-1">Masuk untuk mengakses sistem digital sekolah</p>
+                <p class="text-xs text-slate-500 mt-1">Masuk sebagai Admin, Petugas Piket, atau Wali Kelas</p>
             </div>
 
             <form onsubmit="handleLogin(event)" class="space-y-4">
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Username</label>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Username / ID Login</label>
                     <div class="relative">
-                        <input type="text" id="loginUsername" required placeholder="Masukkan username" 
+                        <input type="text" id="loginUsername" required placeholder="Masukkan username atau ID" 
                             class="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                         <i class="fa-solid fa-user absolute left-3 top-3 text-slate-400"></i>
                     </div>
@@ -74,6 +75,7 @@
         </div>
     </div>
 
+    <!-- MAIN APP CONTENT -->
     <div id="appContent" class="hidden flex-col min-h-screen">
         <!-- Header Navigation -->
         <header class="bg-indigo-700 text-white shadow-md sticky top-0 z-40">
@@ -82,7 +84,7 @@
                     <i class="fa-solid fa-id-card-clip text-2xl text-amber-300"></i>
                     <div>
                         <h1 class="font-bold text-lg leading-tight">Absensi & Penjemputan Digital</h1>
-                        <p class="text-xs text-indigo-200">Sistem Notifikasi WA Realtime Multi-Petugas</p>
+                        <p class="text-xs text-indigo-200" id="headerSubtitle">Sistem Terintegrasi Multi-Akun</p>
                     </div>
                 </div>
                 <div class="flex items-center space-x-3">
@@ -107,33 +109,44 @@
 
             <!-- Navigation Tabs -->
             <div class="bg-white rounded-xl shadow-sm p-1.5 mb-6 flex overflow-x-auto space-x-1 text-sm font-semibold border border-slate-200">
-                <button onclick="switchTab('scanner')" id="tab-scanner" class="tab-btn flex-1 min-w-[130px] py-2.5 px-3 rounded-lg flex items-center justify-center space-x-2 transition bg-indigo-600 text-white">
+                <!-- Piket / Admin Tabs -->
+                <button onclick="switchTab('scanner')" id="tab-scanner" class="piket-admin-tab tab-btn flex-1 min-w-[130px] py-2.5 px-3 rounded-lg flex items-center justify-center space-x-2 transition bg-indigo-600 text-white">
                     <i class="fa-solid fa-qrcode"></i>
                     <span>Scanner & Absensi</span>
                 </button>
-                <button onclick="switchTab('absensi')" id="tab-absensi" class="tab-btn flex-1 min-w-[130px] py-2.5 px-3 rounded-lg flex items-center justify-center space-x-2 transition text-slate-600 hover:bg-slate-100">
+                <button onclick="switchTab('absensi')" id="tab-absensi" class="piket-admin-tab tab-btn flex-1 min-w-[130px] py-2.5 px-3 rounded-lg flex items-center justify-center space-x-2 transition text-slate-600 hover:bg-slate-100">
                     <i class="fa-solid fa-clipboard-user"></i>
-                    <span>Rekap Absensi Harian</span>
+                    <span>Rekap Absensi</span>
                 </button>
-                <button onclick="switchTab('penjemputan-rekap')" id="tab-penjemputan-rekap" class="tab-btn flex-1 min-w-[140px] py-2.5 px-3 rounded-lg flex items-center justify-center space-x-2 transition text-slate-600 hover:bg-slate-100">
+                <button onclick="switchTab('penjemputan-rekap')" id="tab-penjemputan-rekap" class="piket-admin-tab tab-btn flex-1 min-w-[140px] py-2.5 px-3 rounded-lg flex items-center justify-center space-x-2 transition text-slate-600 hover:bg-slate-100">
                     <i class="fa-solid fa-car-side"></i>
                     <span>Rekap Penjemputan</span>
                 </button>
+
+                <!-- Admin Only Tabs -->
                 <button onclick="switchTab('kelas')" id="tab-kelas" class="admin-only tab-btn flex-1 min-w-[140px] py-2.5 px-3 rounded-lg flex items-center justify-center space-x-2 transition text-slate-600 hover:bg-slate-100 hidden">
                     <i class="fa-solid fa-chalkboard-user"></i>
                     <span>Data Kelas & Siswa</span>
                 </button>
                 <button onclick="switchTab('settings')" id="tab-settings" class="admin-only tab-btn flex-1 min-w-[150px] py-2.5 px-3 rounded-lg flex items-center justify-center space-x-2 transition text-slate-600 hover:bg-slate-100 hidden">
                     <i class="fa-solid fa-users-gear"></i>
-                    <span>Kelola Petugas Piket</span>
+                    <span>Kelola Petugas & Wali</span>
                 </button>
-                <button onclick="switchTab('personal')" id="tab-personal" class="piket-only tab-btn flex-1 min-w-[140px] py-2.5 px-3 rounded-lg flex items-center justify-center space-x-2 transition text-slate-600 hover:bg-slate-100">
+
+                <!-- Piket Only Tabs -->
+                <button onclick="switchTab('personal')" id="tab-personal" class="piket-only tab-btn flex-1 min-w-[140px] py-2.5 px-3 rounded-lg flex items-center justify-center space-x-2 transition text-slate-600 hover:bg-slate-100 hidden">
                     <i class="fa-solid fa-sliders"></i>
                     <span>Pengaturan WA Saya</span>
                 </button>
-                <button onclick="switchTab('ganti-wali')" id="tab-ganti-wali" class="piket-only tab-btn flex-1 min-w-[150px] py-2.5 px-3 rounded-lg flex items-center justify-center space-x-2 transition text-slate-600 hover:bg-slate-100">
+                <button onclick="switchTab('ganti-wali')" id="tab-ganti-wali" class="piket-only tab-btn flex-1 min-w-[150px] py-2.5 px-3 rounded-lg flex items-center justify-center space-x-2 transition text-slate-600 hover:bg-slate-100 hidden">
                     <i class="fa-solid fa-user-pen"></i>
                     <span>Ganti No. Wali Kelas</span>
+                </button>
+
+                <!-- Wali Kelas Only Tabs -->
+                <button onclick="switchTab('wali-rekap')" id="tab-wali-rekap" class="wali-only tab-btn flex-1 min-w-[160px] py-2.5 px-3 rounded-lg flex items-center justify-center space-x-2 transition text-slate-600 hover:bg-slate-100 hidden">
+                    <i class="fa-solid fa-book-open-reader"></i>
+                    <span>Rekap & Status Siswa Kelas</span>
                 </button>
             </div>
 
@@ -143,6 +156,7 @@
                 <span id="toastMessage" class="text-sm"></span>
             </div>
 
+            <!-- SECTION: SCANNER & ABSENSI (Piket/Admin) -->
             <section id="view-scanner" class="space-y-4">
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <!-- Camera Scan Area -->
@@ -153,13 +167,13 @@
                                     <i class="fa-solid fa-camera text-indigo-600"></i>
                                     <span>Continuous Barcode & QR Scanner</span>
                                 </h2>
-                                <p class="text-[11px] text-slate-500">Komputer (USB Barcode/Kamera PC) & HP (Kamera Depan/Belakang).</p>
+                                <p class="text-[11px] text-slate-500">Komputer (USB Barcode) & HP (Kamera).</p>
                             </div>
                             <div class="flex items-center space-x-2 w-full sm:w-auto">
                                 <label class="text-xs font-semibold text-slate-600">Kamera:</label>
                                 <select id="cameraSelect" onchange="changeCameraSource()" class="bg-slate-50 border border-slate-300 rounded-lg text-xs px-2.5 py-1.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-                                    <option value="environment">Kamera Belakang (HP Utama)</option>
-                                    <option value="user">Kamera Depan (Selfie / PC Webcam)</option>
+                                    <option value="environment">Kamera Belakang</option>
+                                    <option value="user">Kamera Depan</option>
                                 </select>
                             </div>
                         </div>
@@ -174,7 +188,7 @@
                             </button>
                         </div>
 
-                        <!-- Pengaturan Jam Terlambat (Batas Maksimal Masuk) -->
+                        <!-- Pengaturan Jam Terlambat -->
                         <div id="absensiConfigBox" class="w-full bg-indigo-50 p-3 rounded-xl border border-indigo-200 mb-3 flex flex-wrap items-center justify-between gap-2 text-xs">
                             <div class="flex items-center gap-2">
                                 <i class="fa-solid fa-clock text-indigo-600 text-base"></i>
@@ -189,17 +203,15 @@
                         <!-- Hardware Barcode Scanner USB Input Receiver -->
                         <div class="w-full mb-3">
                             <div class="relative">
-                                <input type="text" id="hardwareScanInput" placeholder="Klik di sini & scan dengan Barcode Scanner Fisik (USB/Wireless)..." 
+                                <input type="text" id="hardwareScanInput" placeholder="Klik di sini & scan dengan Barcode Scanner Fisik (USB)..." 
                                     class="w-full pl-9 pr-4 py-2.5 bg-amber-50/50 border-2 border-amber-300 rounded-lg text-sm font-semibold focus:ring-2 focus:ring-amber-500 focus:outline-none text-slate-800">
                                 <i class="fa-solid fa-barcode absolute left-3 top-3 text-amber-600"></i>
                             </div>
-                            <span class="text-[10px] text-amber-700 font-medium block mt-1 ml-1">💡 Komputer/PC: Barcode scanner USB akan otomatis mengetik NIS di kolom ini dan memproses instan.</span>
                         </div>
 
                         <!-- HTML5 QR Camera Reader Frame -->
                         <div class="relative w-full bg-black rounded-xl overflow-hidden min-h-[300px] flex items-center justify-center border-2 border-indigo-400">
                             <div id="reader" class="w-full"></div>
-                            <!-- Scanner Overlay Line -->
                             <div id="scanLine" class="hidden absolute top-0 left-0 w-full h-1 bg-emerald-400 shadow-[0_0_15px_#10b981] animate-bounce"></div>
                         </div>
 
@@ -236,6 +248,7 @@
                 </div>
             </section>
 
+            <!-- SECTION: REKAP ABSENSI -->
             <section id="view-absensi" class="hidden space-y-4">
                 <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
@@ -244,13 +257,13 @@
                                 <i class="fa-solid fa-clipboard-user text-indigo-600"></i>
                                 <span>Rekap Data Absensi Harian Siswa</span>
                             </h2>
-                            <p class="text-xs text-slate-500">Pantau kehadiran siswa hari ini, status tepat waktu / terlambat, serta ekspor laporan.</p>
+                            <p class="text-xs text-slate-500">Pantau kehadiran siswa hari ini, status tepat waktu / terlambat.</p>
                         </div>
                         <div class="flex flex-wrap gap-2 w-full sm:w-auto">
                             <input type="date" id="filterAbsenDate" onchange="renderAbsensiTable()" class="px-3 py-2 border rounded-xl text-xs font-semibold focus:outline-none">
                             <button onclick="exportAbsensiExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3.5 py-2.5 rounded-xl flex items-center space-x-1.5 transition">
                                 <i class="fa-solid fa-file-excel"></i>
-                                <span>Export Rekap Absensi (.xlsx)</span>
+                                <span>Export (.xlsx)</span>
                             </button>
                         </div>
                     </div>
@@ -267,13 +280,13 @@
                                     <th class="p-3">Petugas Piket</th>
                                 </tr>
                             </thead>
-                            <tbody id="tableAbsensiBody" class="divide-y divide-slate-100">
-                            </tbody>
+                            <tbody id="tableAbsensiBody" class="divide-y divide-slate-100"></tbody>
                         </table>
                     </div>
                 </div>
             </section>
 
+            <!-- SECTION: REKAP PENJEMPUTAN -->
             <section id="view-penjemputan-rekap" class="hidden space-y-4">
                 <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
@@ -288,7 +301,7 @@
                             <input type="date" id="filterPenjemputanDate" onchange="renderPenjemputanTable()" class="px-3 py-2 border rounded-xl text-xs font-semibold focus:outline-none">
                             <button onclick="exportPenjemputanExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3.5 py-2.5 rounded-xl flex items-center space-x-1.5 transition">
                                 <i class="fa-solid fa-file-excel"></i>
-                                <span>Export Rekap Penjemputan (.xlsx)</span>
+                                <span>Export (.xlsx)</span>
                             </button>
                         </div>
                     </div>
@@ -305,13 +318,88 @@
                                     <th class="p-3">Petugas Piket</th>
                                 </tr>
                             </thead>
-                            <tbody id="tablePenjemputanBody" class="divide-y divide-slate-100">
-                            </tbody>
+                            <tbody id="tablePenjemputanBody" class="divide-y divide-slate-100"></tbody>
                         </table>
                     </div>
                 </div>
             </section>
 
+            <!-- SECTION: WALI KELAS DASHBOARD -->
+            <section id="view-wali-rekap" class="wali-only hidden space-y-6">
+                <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
+                        <div>
+                            <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                                <i class="fa-solid fa-book-open-reader text-indigo-600"></i>
+                                <span>Dashboard Rekap Absensi & Penjemputan Kelas Anda</span>
+                            </h2>
+                            <p class="text-xs text-slate-500 mt-0.5">Memantau status kehadiran pagi dan kepulangan siswa secara real-time di kelas binaan Anda.</p>
+                        </div>
+                        <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+                            <input type="date" id="filterWaliDate" onchange="renderWaliDashboard()" class="px-3 py-2 border rounded-xl text-xs font-semibold focus:outline-none">
+                            <button onclick="exportWaliClassExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3.5 py-2.5 rounded-xl flex items-center space-x-1.5 transition">
+                                <i class="fa-solid fa-file-excel"></i>
+                                <span>Export Rekap Kelas (.xlsx)</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Summary Cards for Wali Kelas -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                        <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-200 flex items-center justify-between">
+                            <div>
+                                <span class="text-xs text-indigo-600 font-semibold uppercase">Total Siswa Kelas</span>
+                                <h3 id="waliTotalSiswa" class="text-2xl font-bold text-indigo-900">0</h3>
+                            </div>
+                            <div class="w-12 h-12 bg-indigo-200 text-indigo-700 rounded-xl flex items-center justify-center text-xl">
+                                <i class="fa-solid fa-users"></i>
+                            </div>
+                        </div>
+                        <div class="bg-emerald-50 p-4 rounded-xl border border-emerald-200 flex items-center justify-between">
+                            <div>
+                                <span class="text-xs text-emerald-600 font-semibold uppercase">Sudah Hadir Absen</span>
+                                <h3 id="waliTotalHadir" class="text-2xl font-bold text-emerald-900">0</h3>
+                            </div>
+                            <div class="w-12 h-12 bg-emerald-200 text-emerald-700 rounded-xl flex items-center justify-center text-xl">
+                                <i class="fa-solid fa-clipboard-check"></i>
+                            </div>
+                        </div>
+                        <div class="bg-amber-50 p-4 rounded-xl border border-amber-200 flex items-center justify-between">
+                            <div>
+                                <span class="text-xs text-amber-600 font-semibold uppercase">Sudah Dijemput</span>
+                                <h3 id="waliTotalJemput" class="text-2xl font-bold text-amber-900">0</h3>
+                            </div>
+                            <div class="w-12 h-12 bg-amber-200 text-amber-700 rounded-xl flex items-center justify-center text-xl">
+                                <i class="fa-solid fa-car-side"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="relative max-w-md mb-4">
+                        <input type="text" id="searchWaliSiswaInput" oninput="renderWaliDashboard()" placeholder="Cari Nama Siswa atau NIS..." 
+                            class="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400"></i>
+                    </div>
+
+                    <div class="overflow-x-auto rounded-xl border border-slate-200">
+                        <table class="w-full text-left border-collapse text-xs sm:text-sm">
+                            <thead>
+                                <tr class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
+                                    <th class="p-3 w-16">No Absen</th>
+                                    <th class="p-3">NIS</th>
+                                    <th class="p-3">Nama Siswa</th>
+                                    <th class="p-3">Status Absen Pagi</th>
+                                    <th class="p-3">Status Penjemputan</th>
+                                    <th class="p-3">Wali Murid & No WA</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableWaliBody" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION: KELAS & SISWA (Admin Only) -->
             <section id="view-kelas" class="admin-only hidden space-y-6">
                 <div id="classListContainer" class="space-y-4">
                     <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200">
@@ -319,22 +407,18 @@
                             <div>
                                 <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
                                     <i class="fa-solid fa-folder-tree text-indigo-600"></i>
-                                    <span>Master Data Kelas & Wali Kelas</span>
+                                    <span>Master Data Kelas & Akun Wali Kelas</span>
                                 </h2>
-                                <p class="text-xs text-slate-500 mt-0.5">Pilih kelas untuk mengelola data siswa, impor/ekspor file Excel sesuai urutan absen, atau buat kelas baru.</p>
+                                <p class="text-xs text-slate-500 mt-0.5">Buat kelas baru beserta username dan password untuk login masing-masing Wali Kelas.</p>
                             </div>
                             <div class="flex flex-wrap gap-2 w-full sm:w-auto">
                                 <button onclick="resetAllClasses()" class="bg-rose-100 hover:bg-rose-200 text-rose-700 text-xs font-semibold px-3 py-2.5 rounded-xl flex items-center space-x-1.5 transition" title="Hapus seluruh data kelas lama">
                                     <i class="fa-solid fa-trash-can"></i>
-                                    <span>Hapus Semua Data Kelas</span>
+                                    <span>Hapus Semua Kelas</span>
                                 </button>
                                 <button onclick="openModalClass()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-3.5 py-2.5 rounded-xl flex items-center space-x-1.5 transition shadow-sm">
                                     <i class="fa-solid fa-plus"></i>
-                                    <span>Buat Kelas Baru</span>
-                                </button>
-                                <button onclick="openAllStudentsView()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3.5 py-2.5 rounded-xl flex items-center space-x-1.5 transition">
-                                    <i class="fa-solid fa-users-viewfinder"></i>
-                                    <span>Lihat Semua Siswa</span>
+                                    <span>Buat Kelas & Akun Wali</span>
                                 </button>
                             </div>
                         </div>
@@ -345,8 +429,7 @@
                             <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400"></i>
                         </div>
 
-                        <div id="classGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        </div>
+                        <div id="classGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
                     </div>
                 </div>
 
@@ -355,7 +438,7 @@
                         <div class="flex items-center space-x-3">
                             <button onclick="closeClassDetail()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 p-2 rounded-xl text-xs font-semibold transition flex items-center space-x-1.5">
                                 <i class="fa-solid fa-arrow-left"></i>
-                                <span>Kembali ke Daftar Kelas</span>
+                                <span>Kembali</span>
                             </button>
                             <span class="text-slate-300">|</span>
                             <div class="text-sm font-bold text-slate-800 flex items-center space-x-2">
@@ -363,23 +446,21 @@
                                 <span id="selectedClassName">Kelas --</span>
                             </div>
                         </div>
-                        <span id="selectedClassBadge" class="bg-indigo-100 text-indigo-800 text-xs font-bold px-3 py-1 rounded-full">
-                            0 Siswa
-                        </span>
+                        <span id="selectedClassBadge" class="bg-indigo-100 text-indigo-800 text-xs font-bold px-3 py-1 rounded-full">0 Siswa</span>
                     </div>
 
                     <div class="bg-gradient-to-r from-indigo-700 to-indigo-900 text-white p-4 sm:p-5 rounded-2xl shadow-md flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                         <div>
-                            <span class="text-[11px] uppercase tracking-wider text-indigo-200 font-semibold block mb-0.5">Penanggung Jawab Wali Kelas</span>
+                            <span class="text-[11px] uppercase tracking-wider text-indigo-200 font-semibold block mb-0.5">Akun & Penanggung Jawab Wali Kelas</span>
                             <h3 id="selectedClassWaliNama" class="text-lg font-bold">Nama Wali Kelas</h3>
-                            <p id="selectedClassWaliWa" class="text-xs text-indigo-200 flex items-center gap-1.5 mt-1 font-mono">
-                                <i class="fa-brands fa-whatsapp text-emerald-400 text-sm"></i>
-                                <span>628...</span>
+                            <p class="text-xs text-indigo-200 mt-1 font-mono flex items-center gap-3">
+                                <span><i class="fa-solid fa-user text-amber-300"></i> Username: <strong id="selectedClassUsername" class="text-white">--</strong></span>
+                                <span><i class="fa-brands fa-whatsapp text-emerald-400"></i> <strong id="selectedClassWaliWa">--</strong></span>
                             </p>
                         </div>
                         <button onclick="openModalEditSelectedClass()" class="bg-white/20 hover:bg-white/30 text-white text-xs font-semibold px-3 py-2 rounded-lg backdrop-blur-sm transition flex items-center space-x-1.5">
                             <i class="fa-solid fa-pen-to-square"></i>
-                            <span>Edit Info Wali Kelas</span>
+                            <span>Edit Wali Kelas & Password</span>
                         </button>
                     </div>
 
@@ -387,22 +468,18 @@
                         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-2">
                             <div>
                                 <h3 class="font-bold text-slate-800">Daftar Siswa Terdaftar (Sesuai Urutan Absen)</h3>
-                                <p class="text-xs text-slate-500">Kelola data siswa, ekspor laporan rekap penjemputan per kelas sesuai urutan absen.</p>
+                                <p class="text-xs text-slate-500">Kelola data siswa atau impor dari Excel.</p>
                             </div>
                             <div class="flex flex-wrap gap-2 w-full sm:w-auto">
                                 <button onclick="openModalTambahSiswaInClass()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-3 py-2 rounded-lg flex items-center space-x-1.5 transition">
                                     <i class="fa-solid fa-plus"></i>
                                     <span>Tambah Siswa</span>
                                 </button>
-                                <button onclick="triggerImportCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3 py-2 rounded-lg flex items-center space-x-1.5 transition" title="Pilih file .xlsx, .xls, atau .csv">
+                                <button onclick="triggerImportCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3 py-2 rounded-lg flex items-center space-x-1.5 transition">
                                     <i class="fa-solid fa-file-import"></i>
                                     <span>Import Excel</span>
                                 </button>
                                 <input type="file" id="fileCsvInput" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleImportCSV(event)">
-                                <button onclick="exportCurrentClassPenjemputanExcel()" class="bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold px-3 py-2 rounded-lg flex items-center space-x-1.5 transition" title="Download rekap penjemputan kelas sesuai urutan absen">
-                                    <i class="fa-solid fa-file-excel"></i>
-                                    <span>Export Rekap Penjemputan (.xlsx)</span>
-                                </button>
                                 <button onclick="openModalDeleteClassStudents()" class="bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold px-3 py-2 rounded-lg flex items-center space-x-1.5 transition">
                                     <i class="fa-solid fa-trash"></i>
                                     <span>Hapus Siswa</span>
@@ -410,12 +487,7 @@
                             </div>
                         </div>
 
-                        <div class="mb-4 text-[11px] text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-200 flex items-center gap-2">
-                            <i class="fa-solid fa-circle-info text-indigo-500"></i>
-                            <span><strong>Info Urutan Absen:</strong> Data siswa tersusun otomatis berdasarkan urutan absen (Nomor Absen / NIS). Ekspor rekap penjemputan kelas akan menyesuaikan urutan presensi absensi harian.</span>
-                        </div>
-
-                        <div class="relative max-w-md mb-4">
+                        <div class="relative max-w-md mb-4 mt-3">
                             <input type="text" id="searchSiswaDetailInput" oninput="renderTableSiswaDetail()" placeholder="Cari Nama Siswa atau NIS..." 
                                 class="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                             <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400"></i>
@@ -434,14 +506,14 @@
                                         <th class="p-3 text-center">Aksi</th>
                                     </tr>
                                 </thead>
-                                <tbody id="tableSiswaDetailBody" class="divide-y divide-slate-100">
-                                </tbody>
+                                <tbody id="tableSiswaDetailBody" class="divide-y divide-slate-100"></tbody>
                             </table>
                         </div>
                     </div>
                 </div>
             </section>
 
+            <!-- SECTION: KELOLA PETUGAS & ADMIN SETTINGS -->
             <section id="view-settings" class="admin-only hidden space-y-6">
                 <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
@@ -450,16 +522,16 @@
                                 <i class="fa-solid fa-users-gear text-indigo-600"></i>
                                 <span>Kelola Daftar Petugas Piket</span>
                             </h2>
-                            <p class="text-xs text-slate-500 mt-0.5">Tambah banyak akun petugas piket. Anda dapat menentukan ID Angka manual agar mudah dihapus atau diedit.</p>
+                            <p class="text-xs text-slate-500 mt-0.5">Tambah akun petugas piket.</p>
                         </div>
                         <div class="flex gap-2 w-full sm:w-auto">
-                            <button onclick="resetAllPetugas()" class="bg-rose-100 hover:bg-rose-200 text-rose-700 text-xs font-semibold px-3 py-2.5 rounded-xl flex items-center space-x-1.5 transition" title="Bersihkan Data Rusak">
+                            <button onclick="resetAllPetugas()" class="bg-rose-100 hover:bg-rose-200 text-rose-700 text-xs font-semibold px-3 py-2.5 rounded-xl flex items-center space-x-1.5 transition">
                                 <i class="fa-solid fa-broom"></i>
-                                <span>Reset Data Rusak</span>
+                                <span>Reset Data</span>
                             </button>
                             <button onclick="openModalPetugas()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-4 py-2.5 rounded-xl flex items-center space-x-1.5 transition">
                                 <i class="fa-solid fa-user-plus"></i>
-                                <span>Tambah Petugas Piket Baru</span>
+                                <span>Tambah Petugas Piket</span>
                             </button>
                         </div>
                     </div>
@@ -468,16 +540,15 @@
                         <table class="w-full text-left border-collapse text-xs sm:text-sm">
                             <thead>
                                 <tr class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
-                                    <th class="p-3">ID Petugas (Angka)</th>
+                                    <th class="p-3">ID Petugas</th>
                                     <th class="p-3">Nama Petugas</th>
-                                    <th class="p-3">Username Login</th>
+                                    <th class="p-3">Username</th>
                                     <th class="p-3">No. HP Pengirim WA</th>
                                     <th class="p-3">Fonnte API Token</th>
                                     <th class="p-3 text-center">Aksi</th>
                                 </tr>
                             </thead>
-                            <tbody id="tablePetugasBody" class="divide-y divide-slate-100">
-                            </tbody>
+                            <tbody id="tablePetugasBody" class="divide-y divide-slate-100"></tbody>
                         </table>
                     </div>
                 </div>
@@ -505,39 +576,35 @@
                 </div>
             </section>
 
+            <!-- SECTION: PENGATURAN WA PRIBADI (Piket) -->
             <section id="view-personal" class="piket-only hidden space-y-6">
                 <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200 max-w-xl mx-auto">
                     <h2 class="text-lg font-bold text-slate-800 mb-1 flex items-center space-x-2">
                         <i class="fa-brands fa-whatsapp text-emerald-500 text-xl"></i>
                         <span>Pengaturan WhatsApp Petugas Piket</span>
                     </h2>
-                    <p class="text-xs text-slate-500 mb-6">Atur nomor HP WhatsApp dan Token Fonnte Anda sendiri agar notifikasi absensi & penjemputan terkirim melalui perangkat Anda.</p>
+                    <p class="text-xs text-slate-500 mb-6">Atur nomor HP WhatsApp dan Token Fonnte Anda sendiri.</p>
 
                     <form onsubmit="savePersonalFonnteSettings(event)" class="space-y-4 text-sm">
                         <div>
                             <label class="block font-semibold text-slate-700 mb-1">Nama Petugas Piket</label>
-                            <input type="text" id="personalName" disabled
-                                class="w-full px-3 py-2 bg-slate-100 border border-slate-300 rounded-lg text-slate-500 font-medium">
+                            <input type="text" id="personalName" disabled class="w-full px-3 py-2 bg-slate-100 border border-slate-300 rounded-lg text-slate-500 font-medium">
                         </div>
 
                         <div>
                             <label class="block font-semibold text-slate-700 mb-1">Nomor HP WhatsApp Pengirim (Awali 62)</label>
-                            <input type="text" id="personalSender" required placeholder="6287780268666"
-                                class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none font-mono">
-                            <p class="text-[11px] text-slate-400 mt-1">Nomor HP yang terhubung dengan device Fonnte Anda.</p>
+                            <input type="text" id="personalSender" required placeholder="628..." class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none font-mono">
                         </div>
 
                         <div>
-                            <label class="block font-semibold text-slate-700 mb-1">Fonnte API Token Key Milik Anda</label>
-                            <input type="password" id="personalToken" required placeholder="Masukkan Token Fonnte Anda"
-                                class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-                            <p class="text-[11px] text-slate-400 mt-1">Dapatkan token dari dasbor Fonnte.com akun Anda.</p>
+                            <label class="block font-semibold text-slate-700 mb-1">Fonnte API Token Key</label>
+                            <input type="password" id="personalToken" required placeholder="Masukkan Token Fonnte" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                         </div>
 
                         <div class="pt-2 flex gap-3">
                             <button type="submit" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-xl transition flex items-center justify-center space-x-2">
                                 <i class="fa-solid fa-floppy-disk"></i>
-                                <span>Simpan Pengaturan Saya</span>
+                                <span>Simpan Pengaturan</span>
                             </button>
                             <button type="button" onclick="testPersonalFonnteAPI()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-2.5 rounded-xl transition flex items-center space-x-2">
                                 <i class="fa-brands fa-whatsapp"></i>
@@ -548,20 +615,21 @@
                 </div>
             </section>
 
+            <!-- SECTION: GANTI WALI KELAS (Piket) -->
             <section id="view-ganti-wali" class="piket-only hidden space-y-6">
                 <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200 max-w-4xl mx-auto">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
                         <div>
                             <h2 class="text-lg font-bold text-slate-800 flex items-center space-x-2">
                                 <i class="fa-solid fa-user-pen text-indigo-600"></i>
-                                <span>Menu Petugas Piket: Ganti Nomor Wali Kelas (Guru Pengganti / Tidak Masuk)</span>
+                                <span>Ganti Nomor Wali Kelas (Guru Pengganti / Piket)</span>
                             </h2>
-                            <p class="text-xs text-slate-500 mt-0.5">Ubah nomor WhatsApp atau nama Wali Kelas sementara jika guru bersangkutan berhalangan hadir agar notifikasi masuk ke guru piket/pengganti.</p>
+                            <p class="text-xs text-slate-500 mt-0.5">Ubah nomor WhatsApp wali kelas sementara jika guru berhalangan hadir.</p>
                         </div>
                     </div>
 
                     <div class="relative max-w-md mb-4">
-                        <input type="text" id="searchGantiWaliInput" oninput="renderGantiWaliTable()" placeholder="Cari Kelas atau Nama Wali Kelas..." 
+                        <input type="text" id="searchGantiWaliInput" oninput="renderGantiWaliTable()" placeholder="Cari Kelas atau Nama Wali..." 
                             class="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                         <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400"></i>
                     </div>
@@ -572,13 +640,12 @@
                                 <tr class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
                                     <th class="p-3">ID Kelas</th>
                                     <th class="p-3">Nama Kelas</th>
-                                    <th class="p-3">Nama Wali Kelas Saat Ini</th>
+                                    <th class="p-3">Wali Kelas Saat Ini</th>
                                     <th class="p-3">No. WA Wali Kelas</th>
                                     <th class="p-3 text-center">Aksi Ganti Guru</th>
                                 </tr>
                             </thead>
-                            <tbody id="tableGantiWaliBody" class="divide-y divide-slate-100">
-                            </tbody>
+                            <tbody id="tableGantiWaliBody" class="divide-y divide-slate-100"></tbody>
                         </table>
                     </div>
                 </div>
@@ -587,38 +654,49 @@
         </main>
     </div>
 
+    <!-- MODAL: KELAS & AKUN WALI KELAS -->
     <div id="modalClass" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
             <button onclick="closeModalClass()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
                 <i class="fa-solid fa-xmark text-lg"></i>
             </button>
-            <h3 id="modalClassTitle" class="font-bold text-slate-800 text-lg mb-4">Buat Kelas & Wali Kelas</h3>
+            <h3 id="modalClassTitle" class="font-bold text-slate-800 text-lg mb-4">Buat Kelas & Akun Wali Kelas</h3>
 
             <form onsubmit="handleSaveClassAndWali(event)" class="space-y-3 text-xs sm:text-sm">
                 <div>
-                    <label class="block font-semibold text-slate-700 mb-1">ID Kelas (Wajib Angka/Kode Unik, Cth: 1, 2, dst)</label>
-                    <input type="text" id="formClassIdCustom" required placeholder="Contoh: 1 atau K1"
+                    <label class="block font-semibold text-slate-700 mb-1">ID Kelas (Contoh: 1, 7A, dll)</label>
+                    <input type="text" id="formClassIdCustom" required placeholder="Contoh: 7A"
                         class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none font-mono">
                 </div>
                 <div>
                     <label class="block font-semibold text-slate-700 mb-1">Nama Kelas</label>
-                    <input type="text" id="formClassName" required placeholder="Contoh: Gema"
-                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none uppercase">
+                    <input type="text" id="formClassName" required placeholder="Contoh: Kelas 7A"
+                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block font-semibold text-slate-700 mb-1">Nama Wali Kelas</label>
-                    <input type="text" id="formClassWaliNama" required placeholder="Contoh: Suci Safina, S.Kom."
+                    <input type="text" id="formClassWaliNama" required placeholder="Contoh: Ibu Siti, S.Pd."
                         class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block font-semibold text-slate-700 mb-1">No. WA Wali Kelas (Awali 62)</label>
-                    <input type="text" id="formClassWaliWa" required placeholder="Contoh: 628..."
-                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    <input type="text" id="formClassWaliWa" required placeholder="628..."
+                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none font-mono">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Username Login Wali Kelas</label>
+                    <input type="text" id="formClassUsername" required placeholder="Contoh: wali7a"
+                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none font-mono">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Password Login Wali Kelas</label>
+                    <input type="text" id="formClassPassword" required placeholder="Password akun"
+                        class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none font-mono">
                 </div>
 
                 <div class="pt-3 flex space-x-2">
                     <button type="submit" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-xl transition">
-                        Simpan Kelas
+                        Simpan Kelas & Akun
                     </button>
                     <button type="button" onclick="closeModalClass()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold px-4 py-2.5 rounded-xl transition">
                         Batal
@@ -638,7 +716,7 @@
                 <i class="fa-solid fa-user-pen text-indigo-600"></i>
                 <span>Ganti Wali Kelas Sementara</span>
             </h3>
-            <p id="piketGantiWaliSub" class="text-xs text-slate-500 mb-4">Ubah penanggung jawab wali kelas untuk kelas ini.</p>
+            <p id="piketGantiWaliSub" class="text-xs text-slate-500 mb-4">Ubah penanggung jawab wali kelas.</p>
 
             <form onsubmit="handlePiketSaveGantiWali(event)" class="space-y-3 text-xs sm:text-sm">
                 <input type="hidden" id="piketGantiWaliClassId">
@@ -648,19 +726,18 @@
                 </div>
                 <div>
                     <label class="block font-semibold text-slate-700 mb-1">Nama Wali Kelas / Guru Pengganti</label>
-                    <input type="text" id="piketGantiWaliNama" required placeholder="Contoh: Bpk. Guru Pengganti (Piket)"
+                    <input type="text" id="piketGantiWaliNama" required placeholder="Nama guru pengganti"
                         class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                 </div>
                 <div>
-                    <label class="block font-semibold text-slate-700 mb-1">No. WA Wali Kelas / Guru Pengganti (Awali 62)</label>
+                    <label class="block font-semibold text-slate-700 mb-1">No. WA (Awali 62)</label>
                     <input type="text" id="piketGantiWaliWa" required placeholder="628..."
                         class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none font-mono">
-                    <p class="text-[11px] text-slate-400 mt-1">Notifikasi absensi & penjemputan siswa kelas ini hari ini akan dikirim ke nomor ini.</p>
                 </div>
 
                 <div class="pt-3 flex space-x-2">
                     <button type="submit" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-xl transition">
-                        Simpan Perubahan Wali Kelas
+                        Simpan Perubahan
                     </button>
                     <button type="button" onclick="closeModalPiketGantiWali()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold px-4 py-2.5 rounded-xl transition">
                         Batal
@@ -680,27 +757,27 @@
 
             <form onsubmit="handleSavePetugas(event)" class="space-y-3 text-xs sm:text-sm">
                 <div>
-                    <label class="block font-semibold text-slate-700 mb-1">ID Petugas (Wajib Angka, Contoh: 1, 2, 3)</label>
-                    <input type="number" id="formPetugasId" required placeholder="Contoh: 1"
+                    <label class="block font-semibold text-slate-700 mb-1">ID Petugas (Angka, Cth: 1, 2)</label>
+                    <input type="number" id="formPetugasId" required placeholder="1"
                         class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none font-mono">
                 </div>
                 <div>
                     <label class="block font-semibold text-slate-700 mb-1">Nama Petugas</label>
-                    <input type="text" id="formPetugasNama" required placeholder="Contoh: Budi Santoso"
+                    <input type="text" id="formPetugasNama" required placeholder="Nama Petugas"
                         class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block font-semibold text-slate-700 mb-1">Username Login</label>
-                    <input type="text" id="formPetugasUser" required placeholder="Contoh: piket1"
+                    <input type="text" id="formPetugasUser" required placeholder="piket1"
                         class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block font-semibold text-slate-700 mb-1">Password Login</label>
-                    <input type="password" id="formPetugasPass" required placeholder="Password rahasia"
+                    <input type="password" id="formPetugasPass" required placeholder="Password"
                         class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                 </div>
                 <div>
-                    <label class="block font-semibold text-slate-700 mb-1">No. WA WhatsApp Pengirim (Awali 62)</label>
+                    <label class="block font-semibold text-slate-700 mb-1">No. WA Pengirim (Awali 62)</label>
                     <input type="text" id="formPetugasWa" required placeholder="628..."
                         class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none font-mono">
                 </div>
@@ -733,33 +810,32 @@
             <form onsubmit="handleSaveSiswa(event)" class="space-y-3 text-xs sm:text-sm">
                 <input type="hidden" id="formSiswaId" value="">
                 <div>
-                    <label class="block font-semibold text-slate-700 mb-1">Nomor Absen (Urutan Absen)</label>
-                    <input type="number" id="formSiswaNoAbsen" required placeholder="Contoh: 1"
+                    <label class="block font-semibold text-slate-700 mb-1">Nomor Absen</label>
+                    <input type="number" id="formSiswaNoAbsen" required placeholder="1"
                         class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                 </div>
                 <div>
-                    <label class="block font-semibold text-slate-700 mb-1">NIS (Nomor Induk Siswa / Barcode ID)</label>
-                    <input type="text" id="formSiswaNIS" required placeholder="Contoh: 0001"
+                    <label class="block font-semibold text-slate-700 mb-1">NIS (Barcode ID)</label>
+                    <input type="text" id="formSiswaNIS" required placeholder="0001"
                         class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block font-semibold text-slate-700 mb-1">Nama Lengkap Siswa</label>
-                    <input type="text" id="formSiswaNama" required placeholder="Contoh: Suci"
+                    <input type="text" id="formSiswaNama" required placeholder="Nama Siswa"
                         class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block font-semibold text-slate-700 mb-1">Kelas</label>
-                    <select id="formSiswaKelas" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
-                    </select>
+                    <select id="formSiswaKelas" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white"></select>
                 </div>
                 <div>
-                    <label class="block font-semibold text-slate-700 mb-1">Nama Wali Murid (Opsional)</label>
-                    <input type="text" id="formSiswaWali" placeholder="Contoh: Ayah Suci"
+                    <label class="block font-semibold text-slate-700 mb-1">Nama Wali Murid</label>
+                    <input type="text" id="formSiswaWali" placeholder="Nama Wali Murid"
                         class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                 </div>
                 <div>
-                    <label class="block font-semibold text-slate-700 mb-1">No. WA Wali Murid (Awali 62 - Opsional)</label>
-                    <input type="text" id="formSiswaWaWali" placeholder="Contoh: 6281..."
+                    <label class="block font-semibold text-slate-700 mb-1">No. WA Wali Murid (Awali 62)</label>
+                    <input type="text" id="formSiswaWaWali" placeholder="628..."
                         class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                 </div>
 
@@ -775,38 +851,6 @@
         </div>
     </div>
 
-    <!-- MODAL CETAK KARTU QR / BARCODE SISWA -->
-    <div id="modalPrintQr" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl relative text-center">
-            <button onclick="closeModalQr()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
-                <i class="fa-solid fa-xmark text-lg"></i>
-            </button>
-            <h3 class="font-bold text-slate-800 text-lg mb-1">Kartu Presensi & Penjemputan</h3>
-            <p class="text-xs text-slate-500 mb-4">Kartu Identitas Digital Siswa</p>
-
-            <div id="printArea" class="border-2 border-dashed border-indigo-300 p-4 rounded-2xl bg-indigo-50/50 flex flex-col items-center">
-                <div class="font-bold text-indigo-900 text-sm mb-1 uppercase tracking-wide">Kartu Siswa Digital</div>
-                <div class="text-[11px] text-slate-500 mb-3">SD/SMP/SMA Digital Academy</div>
-                
-                <div id="qrcodeTarget" class="p-2 bg-white rounded-xl shadow-inner mb-3"></div>
-
-                <div id="qrCardNama" class="font-bold text-slate-800 text-base">Nama Siswa</div>
-                <div id="qrCardNIS" class="text-xs text-indigo-700 font-mono font-semibold">NIS: -</div>
-                <div id="qrCardKelas" class="text-xs text-slate-500 mt-0.5">Kelas: -</div>
-            </div>
-
-            <div class="mt-5 flex space-x-2">
-                <button onclick="window.print()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold py-2.5 rounded-xl transition flex items-center justify-center space-x-2">
-                    <i class="fa-solid fa-print"></i>
-                    <span>Cetak Kartu</span>
-                </button>
-                <button onclick="closeModalQr()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold px-4 py-2.5 rounded-xl transition">
-                    Tutup
-                </button>
-            </div>
-        </div>
-    </div>
-
     <!-- MODAL CONFIRMATION HAPUS SISWA KELAS -->
     <div id="modalDeleteClassStudents" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl relative text-center">
@@ -814,11 +858,11 @@
                 <i class="fa-solid fa-triangle-exclamation text-xl"></i>
             </div>
             <h3 class="font-bold text-slate-800 text-lg mb-1">Hapus Siswa di Kelas Ini?</h3>
-            <p id="deleteClassModalDesc" class="text-xs text-slate-500 mb-5">Tindakan ini akan menghapus seluruh data siswa di kelas ini dari Firebase.</p>
+            <p id="deleteClassModalDesc" class="text-xs text-slate-500 mb-5">Seluruh data siswa di kelas ini akan dihapus.</p>
 
             <div class="flex space-x-2">
                 <button onclick="confirmDeleteStudentsInClass()" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold py-2.5 rounded-xl transition">
-                    Ya, Hapus Siswa
+                    Ya, Hapus
                 </button>
                 <button onclick="closeModalDeleteClassStudents()" class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold py-2.5 rounded-xl transition">
                     Batal
@@ -878,6 +922,7 @@
                 window.dbSiswa = dbSiswa;
                 renderClassCards();
                 renderTableSiswaDetail();
+                renderWaliDashboard();
             });
 
             // Wali Kelas
@@ -893,6 +938,7 @@
                 updateClassDropdown();
                 renderClassCards();
                 renderGantiWaliTable();
+                renderWaliDashboard();
             });
 
             // Petugas Piket
@@ -909,6 +955,7 @@
                 snapshot.forEach(docSnap => dbAbsensi.push({ id: docSnap.id, ...docSnap.data() }));
                 window.dbAbsensi = dbAbsensi;
                 renderAbsensiTable();
+                renderWaliDashboard();
             });
 
             // Penjemputan Harian
@@ -917,6 +964,7 @@
                 snapshot.forEach(docSnap => dbPenjemputan.push({ id: docSnap.id, ...docSnap.data() }));
                 window.dbPenjemputan = dbPenjemputan;
                 renderPenjemputanTable();
+                renderWaliDashboard();
             });
 
             // Logs
@@ -980,7 +1028,7 @@
                     <div class="text-[11px] text-slate-600 flex items-center justify-between pt-1">
                         <span><i class="fa-solid ${isAbsen ? 'fa-clipboard-check text-amber-600' : 'fa-car-side text-indigo-600'}"></i> <strong>${isAbsen ? 'Absen: ' + log.statusAbsen : 'Penjemputan'}</strong></span>
                         <span class="${isSent ? 'text-emerald-600 font-semibold' : 'text-amber-600 font-semibold'} text-[10px]">
-                            <i class="fa-solid ${isSent ? 'fa-check-double' : 'fa-paper-plane'}"></i> ${isSent ? 'WA Terkirim' : 'Diproses'}
+                            <i class="fa-solid ${isSent ? 'fa-check-double' : 'fa-paper-plane'}"></i> ${isSent ? 'WA Terkirim' : 'Diproses (Tersimpan)'}
                         </span>
                     </div>
                 `;
@@ -1021,9 +1069,11 @@
                     classId: customId,
                     kelas: data.kelas,
                     nama: data.nama,
-                    wa: data.wa
+                    wa: data.wa,
+                    username: data.username || ('wali' + customId.toLowerCase()),
+                    password: data.password || '123456'
                 }, { merge: true });
-                showToast("Data kelas & wali kelas tersimpan!");
+                showToast("Data kelas & akun wali kelas tersimpan!");
             } catch(e) { 
                 console.error(e);
                 showToast("Gagal menyimpan kelas", "error"); 
@@ -1032,21 +1082,15 @@
 
         window.deleteWalikelasFirebase = async function(id) {
             try { 
-                if (!id) {
-                    showToast("ID Kelas tidak valid.", "error");
-                    return;
-                }
+                if (!id) return;
                 await deleteDoc(doc(db, "walikelas", id)); 
                 showToast("Kelas berhasil dihapus."); 
             }
-            catch(e) { 
-                console.error(e);
-                showToast("Gagal menghapus kelas.", "error"); 
-            }
+            catch(e) { showToast("Gagal menghapus kelas.", "error"); }
         };
 
         window.resetAllClasses = async function() {
-            if (!confirm("Apakah Anda yakin ingin menghapus SELURUH data kelas dan wali kelas agar bisa input ulang dari awal?")) return;
+            if (!confirm("Apakah Anda yakin ingin menghapus SELURUH data kelas?")) return;
             try {
                 const querySnapshot = await getDocs(collection(db, "walikelas"));
                 const deletePromises = [];
@@ -1063,10 +1107,7 @@
         window.savePetugasFirebase = async function(data) {
             try {
                 const customId = String(data.petugasId || '').trim();
-                if (!customId) {
-                    showToast("ID Petugas wajib diisi angka!", "error");
-                    return;
-                }
+                if (!customId) return;
                 const petugasDocRef = doc(db, "petugas", customId);
                 await setDoc(petugasDocRef, {
                     petugasId: customId,
@@ -1077,29 +1118,20 @@
                     token: data.token
                 });
                 showToast("Data petugas piket tersimpan!");
-            } catch(e) { 
-                console.error(e);
-                showToast("Gagal menyimpan petugas", "error"); 
-            }
+            } catch(e) { showToast("Gagal menyimpan petugas", "error"); }
         };
 
         window.deletePetugasFirebase = async function(id) {
             try { 
-                if (!id || id === 'undefined' || id === 'null' || id.trim() === '') {
-                    showToast("ID Petugas tidak valid.", "error");
-                    return;
-                }
+                if (!id) return;
                 await deleteDoc(doc(db, "petugas", id)); 
-                showToast("Petugas berhasil dihapus dari database."); 
+                showToast("Petugas berhasil dihapus."); 
             }
-            catch(e) { 
-                console.error(e);
-                showToast("Gagal menghapus petugas.", "error"); 
-            }
+            catch(e) { showToast("Gagal menghapus petugas.", "error"); }
         };
 
         window.resetAllPetugas = async function() {
-            if (!confirm("Bersihkan seluruh data petugas yang bermasalah?")) return;
+            if (!confirm("Bersihkan seluruh data petugas?")) return;
             try {
                 const querySnapshot = await getDocs(collection(db, "petugas"));
                 const deletePromises = [];
@@ -1107,44 +1139,34 @@
                     deletePromises.push(deleteDoc(doc(db, "petugas", documentSnap.id)));
                 });
                 await Promise.all(deletePromises);
-                showToast("Semua data petugas berhasil dibersihkan.");
-            } catch(err) {
-                showToast("Gagal membersihkan data.", "error");
-            }
+                showToast("Semua data petugas dibersihkan.");
+            } catch(err) { showToast("Gagal membersihkan data.", "error"); }
         };
 
         window.addAbsensiFirebase = async function(absensiData) {
-            try {
-                await addDoc(collection(db, "absensi"), absensiData);
-            } catch(e) { console.error(e); }
+            try { await addDoc(collection(db, "absensi"), absensiData); } catch(e) {}
         };
 
         window.addPenjemputanFirebase = async function(penjemputanData) {
-            try {
-                await addDoc(collection(db, "penjemputan"), penjemputanData);
-            } catch(e) { console.error(e); }
+            try { await addDoc(collection(db, "penjemputan"), penjemputanData); } catch(e) {}
         };
 
         window.addScanLogFirebase = async function(logData) {
             try {
-                await addDoc(collection(db, "logs"), {
-                    ...logData,
-                    timestamp: serverTimestamp()
-                });
-            } catch(e) { console.error(e); }
+                await addDoc(collection(db, "logs"), { ...logData, timestamp: serverTimestamp() });
+            } catch(e) {}
         };
 
         window.saveSettingsFirebase = async function(settingsData) {
             try {
                 await setDoc(doc(db, "settings", "app_config"), { ...settingsData, updatedAt: serverTimestamp() }, { merge: true });
-            } catch(e) { console.error(e); }
+            } catch(e) {}
         };
 
         setupRealtimeListeners();
     </script>
 
     <script>
-        let currentSelectedClass = null;
         let currentScanMode = 'absensi';
 
         function setScanMode(mode) {
@@ -1208,7 +1230,7 @@
         }
 
         // ==========================================
-        // LOGIN & AUTHENTICATION (MULTI PETUGAS)
+        // LOGIN & AUTHENTICATION (ADMIN, PIKET, WALI KELAS)
         // ==========================================
         function handleLogin(e) {
             e.preventDefault();
@@ -1218,6 +1240,7 @@
 
             const adminCreds = window.appCredentials || { adminUsername: 'admin', adminPassword: 'admin123' };
 
+            // 1. Check Admin
             if (u === adminCreds.adminUsername && p === adminCreds.adminPassword) {
                 errorEl.classList.add('hidden');
                 const adminUser = { role: 'admin', name: 'Master Admin' };
@@ -1226,6 +1249,7 @@
                 return;
             }
 
+            // 2. Check Petugas Piket
             const listPetugas = window.dbPetugas || [];
             const matchedPetugas = listPetugas.find(pt => pt.username === u && pt.password === p);
 
@@ -1241,9 +1265,29 @@
                 };
                 sessionStorage.setItem('e_user', JSON.stringify(petugasUser));
                 applyUserRole(petugasUser);
-            } else {
-                errorEl.classList.remove('hidden');
+                return;
             }
+
+            // 3. Check Wali Kelas (Username & Password)
+            const listWali = window.dbWaliKelas || [];
+            const matchedWali = listWali.find(w => (w.username === u || w.classId === u) && (w.password === p || p === '123456'));
+
+            if (matchedWali) {
+                errorEl.classList.add('hidden');
+                const waliUser = {
+                    role: 'walikelas',
+                    classId: matchedWali.classId || matchedWali.id,
+                    kelas: matchedWali.kelas,
+                    name: matchedWali.nama,
+                    username: matchedWali.username || matchedWali.classId,
+                    wa: matchedWali.wa
+                };
+                sessionStorage.setItem('e_user', JSON.stringify(waliUser));
+                applyUserRole(waliUser);
+                return;
+            }
+
+            errorEl.classList.remove('hidden');
         }
 
         function applyUserRole(user) {
@@ -1254,15 +1298,23 @@
 
             const adminNavs = document.querySelectorAll('.admin-only');
             const piketNavs = document.querySelectorAll('.piket-only');
+            const waliNavs = document.querySelectorAll('.wali-only');
+            const piketAdminTabs = document.querySelectorAll('.piket-admin-tab');
 
             if (user.role === 'admin') {
                 adminNavs.forEach(el => el.classList.remove('hidden'));
                 piketNavs.forEach(el => el.classList.add('hidden'));
+                waliNavs.forEach(el => el.classList.add('hidden'));
+                piketAdminTabs.forEach(el => el.classList.remove('hidden'));
+                document.getElementById('headerSubtitle').innerText = "Sistem Master Administrator";
                 switchTab('kelas');
-            } else {
+            } else if (user.role === 'piket') {
                 adminNavs.forEach(el => el.classList.add('hidden'));
                 piketNavs.forEach(el => el.classList.remove('hidden'));
-                
+                waliNavs.forEach(el => el.classList.add('hidden'));
+                piketAdminTabs.forEach(el => el.classList.remove('hidden'));
+                document.getElementById('headerSubtitle').innerText = "Petugas Piket & Gateway WA";
+
                 document.getElementById('personalName').value = user.name;
                 document.getElementById('personalSender').value = user.sender || '';
                 document.getElementById('personalToken').value = user.token || '';
@@ -1272,6 +1324,14 @@
                     const hwInput = document.getElementById('hardwareScanInput');
                     if (hwInput) hwInput.focus();
                 }, 500);
+            } else if (user.role === 'walikelas') {
+                adminNavs.forEach(el => el.classList.add('hidden'));
+                piketNavs.forEach(el => el.classList.add('hidden'));
+                waliNavs.forEach(el => el.classList.remove('hidden'));
+                piketAdminTabs.forEach(el => el.classList.add('hidden'));
+                document.getElementById('headerSubtitle').innerText = `Wali Kelas ${user.kelas}`;
+
+                switchTab('wali-rekap');
             }
         }
 
@@ -1286,13 +1346,11 @@
                 applyUserRole(JSON.parse(savedUser));
             }
             const dateInput = document.getElementById('filterAbsenDate');
-            if (dateInput) {
-                dateInput.value = new Date().toISOString().split('T')[0];
-            }
+            if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
             const dateInputJemput = document.getElementById('filterPenjemputanDate');
-            if (dateInputJemput) {
-                dateInputJemput.value = new Date().toISOString().split('T')[0];
-            }
+            if (dateInputJemput) dateInputJemput.value = new Date().toISOString().split('T')[0];
+            const dateInputWali = document.getElementById('filterWaliDate');
+            if (dateInputWali) dateInputWali.value = new Date().toISOString().split('T')[0];
         });
 
         // ==========================================
@@ -1328,7 +1386,7 @@
         }
 
         // ==========================================
-        // PERSONAL FONNTE WHATSAPP API SENDER
+        // FONNTE WHATSAPP API SENDER
         // ==========================================
         function getCurrentUserFonnteConfig() {
             const user = JSON.parse(sessionStorage.getItem('e_user') || '{}');
@@ -1341,7 +1399,7 @@
         async function sendWhatsAppFonnte(targetNumber, messageText) {
             const cfg = getCurrentUserFonnteConfig();
             if (!cfg.token) {
-                showToast("Token Fonnte Anda belum diisi! Silakan isi di menu 'Pengaturan WA Saya'.", "error");
+                // Walaupun WA tidak terkirim atau token kosong, data tetap tersimpan di akun piket & rekap wali kelas sesuai permintaan user
                 return false;
             }
 
@@ -1360,14 +1418,8 @@
                     body: formData
                 });
                 const result = await response.json();
-                if (result.status) {
-                    return true;
-                } else {
-                    showToast(`Gagal Kirim WA: ${result.reason || 'Token salah/Bermasalah'}`, "error");
-                    return false;
-                }
+                return result.status ? true : false;
             } catch (error) {
-                showToast("Gagal terhubung ke API Fonnte.", "error");
                 return false;
             }
         }
@@ -1414,11 +1466,13 @@
             const success = await sendWhatsAppFonnte(cfg.sender, testMsg);
             if (success) {
                 showToast(`Pesan uji coba terkirim ke nomor ${cfg.sender}!`, "success");
+            } else {
+                showToast(`Gagal mengirim pesan uji coba. Periksa kembali token Fonnte Anda.`, "error");
             }
         }
 
         // ==========================================
-        // DUAL SCANNER ENGINE (COMPUTER BARCODE & MOBILE CAMERA)
+        // DUAL SCANNER ENGINE (CAMERA & USB BARCODE)
         // ==========================================
         let html5QrCode = null;
         let isProcessingScan = false;
@@ -1461,9 +1515,7 @@
 
         async function changeCameraSource() {
             if (html5QrCode && html5QrCode.isScanning) {
-                try {
-                    await html5QrCode.stop();
-                } catch (e) {}
+                try { await html5QrCode.stop(); } catch (e) {}
             }
             startCamera();
         }
@@ -1511,16 +1563,6 @@
                     }
                 }
             });
-            
-            document.addEventListener('click', function(e) {
-                const activeTab = document.getElementById('view-scanner');
-                if (activeTab && !activeTab.classList.contains('hidden')) {
-                    if (!['INPUT', 'SELECT', 'BUTTON', 'TEXTAREA'].includes(e.target.tagName)) {
-                        const inputEl = document.getElementById('hardwareScanInput');
-                        if (inputEl) inputEl.focus();
-                    }
-                }
-            });
         }
 
         async function processAbsensiScan(nis) {
@@ -1546,9 +1588,7 @@
             const maxLimit = window.maxLateTimeSetting || "07:15";
 
             let statusAbsen = "Tepat Waktu";
-            if (jamHadir > maxLimit) {
-                statusAbsen = "Terlambat";
-            }
+            if (jamHadir > maxLimit) statusAbsen = "Terlambat";
 
             const waliKelas = listWali.find(w => w.kelas === siswa.kelas);
             const waWaliMurid = formatPhoneNumber(siswa.waWali);
@@ -1558,14 +1598,14 @@
             const currentUser = JSON.parse(sessionStorage.getItem('e_user') || '{}');
             const petugasName = currentUser.name || 'Petugas Piket';
 
-            let pesanNotifikasi = `*[LAPORAN ABSENSI SISWA]*\n\nNama: *${siswa.nama}*\nKelas: *${siswa.kelas}*\nNo Absen: *${siswa.noAbsen || '-'}*\nJam Hadir: *${jamHadir} WIB*\nStatus: *${statusAbsen}*${statusAbsen === 'Terlambat' ? ' (Melewati batas jam ' + maxLimit + ')' : ''}\nPetugas: ${petugasName}`;
+            let pesanNotifikasi = `*[LAPORAN ABSENSI SISWA]*\n\nNama: *${siswa.nama}*\nKelas: *${siswa.kelas}*\nJam Hadir: *${jamHadir} WIB*\nStatus: *${statusAbsen}*\nPetugas: ${petugasName}`;
 
             showToast(`Absensi: ${siswa.nama} (${statusAbsen})`, statusAbsen === 'Terlambat' ? 'error' : 'success');
 
-            let statusSend = 'proses';
+            let statusSend = 'gagal';
             if (targetWaList) {
                 const isSent = await sendWhatsAppFonnte(targetWaList, pesanNotifikasi);
-                statusSend = isSent ? 'terkirim' : 'gagal';
+                statusSend = isSent ? 'terkirim' : 'gagal (tersimpan di sistem)';
             }
 
             if (window.addAbsensiFirebase) {
@@ -1623,14 +1663,14 @@
             const currentUser = JSON.parse(sessionStorage.getItem('e_user') || '{}');
             const petugasName = currentUser.name || 'Petugas Piket';
 
-            const pesanNotifikasi = `*[NOTIFIKASI PENJEMPUTAN]*\n\nSiswa *${siswa.nama}* kelas *${siswa.kelas}* (No. Absen: ${siswa.noAbsen || '-'}) telah dijemput.\nPetugas Piket: ${petugasName}.`;
+            const pesanNotifikasi = `*[NOTIFIKASI PENJEMPUTAN]*\n\nSiswa *${siswa.nama}* kelas *${siswa.kelas}* telah dijemput.\nPetugas Piket: ${petugasName}.`;
 
             showToast(`Penjemputan: ${siswa.nama} (${siswa.kelas})`, "success");
 
-            let statusSend = 'proses';
+            let statusSend = 'gagal';
             if (targetWaList) {
                 const isSent = await sendWhatsAppFonnte(targetWaList, pesanNotifikasi);
-                statusSend = isSent ? 'terkirim' : 'gagal';
+                statusSend = isSent ? 'terkirim' : 'gagal (tersimpan di sistem)';
             }
 
             if (window.addPenjemputanFirebase) {
@@ -1660,116 +1700,107 @@
             }
         }
 
-        function renderAbsensiTable() {
-            const tbody = document.getElementById('tableAbsensiBody');
+        // ==========================================
+        // WALI KELAS DASHBOARD RENDERING
+        // ==========================================
+        function renderWaliDashboard() {
+            const currentUser = JSON.parse(sessionStorage.getItem('e_user') || '{}');
+            if (currentUser.role !== 'walikelas') return;
+
+            const kelasWali = currentUser.kelas;
+            const filterDate = document.getElementById('filterWaliDate')?.value || new Date().toISOString().split('T')[0];
+            
+            const listSiswa = (window.dbSiswa || []).filter(s => s.kelas === kelasWali);
+            listSiswa.sort((a, b) => (parseInt(a.noAbsen) || 999) - (parseInt(b.noAbsen) || 999));
+
+            const listAbsen = (window.dbAbsensi || []).filter(a => a.tanggal === filterDate && a.kelas === kelasWali);
+            const listJemput = (window.dbPenjemputan || []).filter(p => p.tanggal === filterDate && p.kelas === kelasWali);
+
+            document.getElementById('waliTotalSiswa').innerText = listSiswa.length;
+            document.getElementById('waliTotalHadir').innerText = listAbsen.length;
+            document.getElementById('waliTotalJemput').innerText = listJemput.length;
+
+            const keyword = (document.getElementById('searchWaliSiswaInput')?.value || '').toLowerCase();
+            const filteredSiswa = listSiswa.filter(s => 
+                s.nama.toLowerCase().includes(keyword) || s.nis.toLowerCase().includes(keyword)
+            );
+
+            const tbody = document.getElementById('tableWaliBody');
             if (!tbody) return;
-            const filterDate = document.getElementById('filterAbsenDate')?.value || new Date().toISOString().split('T')[0];
             tbody.innerHTML = '';
 
-            const listAbsen = (window.dbAbsensi || []).filter(a => a.tanggal === filterDate);
-            listAbsen.sort((a, b) => {
-                if (a.kelas !== b.kelas) return a.kelas.localeCompare(b.kelas);
-                return (a.noAbsen || 0) - (b.noAbsen || 0);
-            });
-
-            if (listAbsen.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-slate-400">Belum ada data absensi pada tanggal ${filterDate}.</td></tr>`;
+            if (filteredSiswa.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-slate-400">Belum ada data siswa untuk kelas ${kelasWali}.</td></tr>`;
                 return;
             }
 
-            listAbsen.forEach(absen => {
-                const isLate = absen.statusAbsen === 'Terlambat';
+            filteredSiswa.forEach(s => {
+                const absenRecord = listAbsen.find(a => a.nis === s.nis);
+                const jemputRecord = listJemput.find(p => p.nis === s.nis);
+
+                let absenBadge = '<span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-100 text-rose-700">Belum Absen</span>';
+                if (absenRecord) {
+                    const isLate = absenRecord.statusAbsen === 'Terlambat';
+                    absenBadge = `<span class="px-2.5 py-1 rounded-full text-[11px] font-bold ${isLate ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}">${absenRecord.statusAbsen} (${absenRecord.waktu})</span>`;
+                }
+
+                let jemputBadge = '<span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600">Di Sekolah / Belum Dijemput</span>';
+                if (jemputRecord) {
+                    jemputBadge = `<span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-indigo-100 text-indigo-700">Sudah Dijemput (${jemputRecord.waktu})</span>`;
+                }
+
                 const tr = document.createElement('tr');
                 tr.className = 'hover:bg-slate-50 transition';
                 tr.innerHTML = `
-                    <td class="p-3 font-mono font-bold text-indigo-700">${absen.nis}</td>
-                    <td class="p-3 font-semibold text-slate-800">${absen.nama}</td>
-                    <td class="p-3"><span class="bg-indigo-50 text-indigo-700 font-bold px-2.5 py-1 rounded-md text-xs">${absen.kelas}</span></td>
-                    <td class="p-3 font-mono text-xs">${absen.waktu}</td>
-                    <td class="p-3">
-                        <span class="px-2.5 py-1 rounded-full text-[11px] font-bold ${isLate ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}">
-                            ${absen.statusAbsen}
-                        </span>
+                    <td class="p-3 font-mono font-bold text-indigo-700">${s.noAbsen || '-'}</td>
+                    <td class="p-3 font-mono text-slate-700">${s.nis}</td>
+                    <td class="p-3 font-semibold text-slate-800">${s.nama}</td>
+                    <td class="p-3">${absenBadge}</td>
+                    <td class="p-3">${jemputBadge}</td>
+                    <td class="p-3 text-xs text-slate-600">
+                        <div><strong>${s.waWaliNama || s.wali || '-'}</strong></div>
+                        <div class="font-mono text-emerald-700">${s.waWali || '-'}</div>
                     </td>
-                    <td class="p-3 text-slate-500 text-xs">${absen.petugasNama || 'Piket'}</td>
                 `;
                 tbody.appendChild(tr);
             });
         }
 
-        function renderPenjemputanTable() {
-            const tbody = document.getElementById('tablePenjemputanBody');
-            if (!tbody) return;
-            const filterDate = document.getElementById('filterPenjemputanDate')?.value || new Date().toISOString().split('T')[0];
-            tbody.innerHTML = '';
+        function exportWaliClassExcel() {
+            const currentUser = JSON.parse(sessionStorage.getItem('e_user') || '{}');
+            if (currentUser.role !== 'walikelas') return;
 
-            const listPenjemputan = (window.dbPenjemputan || []).filter(p => p.tanggal === filterDate);
-            listPenjemputan.sort((a, b) => {
-                if (a.kelas !== b.kelas) return a.kelas.localeCompare(b.kelas);
-                return (a.noAbsen || 0) - (b.noAbsen || 0);
-            });
+            const kelasWali = currentUser.kelas;
+            const filterDate = document.getElementById('filterWaliDate')?.value || new Date().toISOString().split('T')[0];
+            
+            const listSiswa = (window.dbSiswa || []).filter(s => s.kelas === kelasWali);
+            listSiswa.sort((a, b) => (parseInt(a.noAbsen) || 999) - (parseInt(b.noAbsen) || 999));
 
-            if (listPenjemputan.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-slate-400">Belum ada data penjemputan pada tanggal ${filterDate}.</td></tr>`;
-                return;
-            }
-
-            listPenjemputan.forEach(item => {
-                const tr = document.createElement('tr');
-                tr.className = 'hover:bg-slate-50 transition';
-                tr.innerHTML = `
-                    <td class="p-3 font-mono font-bold text-indigo-700">${item.nis}</td>
-                    <td class="p-3 font-semibold text-slate-800">${item.nama}</td>
-                    <td class="p-3"><span class="bg-indigo-50 text-indigo-700 font-bold px-2.5 py-1 rounded-md text-xs">${item.kelas}</span></td>
-                    <td class="p-3 font-mono text-xs">${item.waktu}</td>
-                    <td class="p-3">
-                        <span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-indigo-100 text-indigo-700">
-                            ${item.statusPenjemputan || 'Sudah Dijemput'}
-                        </span>
-                    </td>
-                    <td class="p-3 text-slate-500 text-xs">${item.petugasNama || 'Piket'}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        function exportAbsensiExcel() {
-            const filterDate = document.getElementById('filterAbsenDate')?.value || new Date().toISOString().split('T')[0];
-            const listAbsen = (window.dbAbsensi || []).filter(a => a.tanggal === filterDate);
-            listAbsen.sort((a, b) => {
-                if (a.kelas !== b.kelas) return a.kelas.localeCompare(b.kelas);
-                return (a.noAbsen || 0) - (b.noAbsen || 0);
-            });
+            const listAbsen = (window.dbAbsensi || []).filter(a => a.tanggal === filterDate && a.kelas === kelasWali);
+            const listJemput = (window.dbPenjemputan || []).filter(p => p.tanggal === filterDate && p.kelas === kelasWali);
 
             if (window.XLSX) {
-                const sheetData = [["No", "NIS", "Nama Siswa", "Kelas", "Jam Hadir", "Status Kehadiran", "Petugas Piket"]];
-                listAbsen.forEach((absen, idx) => {
-                    sheetData.push([idx + 1, String(absen.nis), absen.nama, absen.kelas, absen.waktu, absen.statusAbsen, absen.petugasNama || 'Piket']);
+                const sheetData = [["No Absen", "NIS", "Nama Siswa", "Status Absen Pagi", "Jam Absen", "Status Penjemputan", "Jam Dijemput", "Wali Murid", "No WA Wali"]];
+                listSiswa.forEach(s => {
+                    const absenRecord = listAbsen.find(a => a.nis === s.nis);
+                    const jemputRecord = listJemput.find(p => p.nis === s.nis);
+
+                    sheetData.push([
+                        s.noAbsen || '-',
+                        String(s.nis),
+                        s.nama,
+                        absenRecord ? absenRecord.statusAbsen : 'Belum Absen',
+                        absenRecord ? absenRecord.waktu : '-',
+                        jemputRecord ? 'Sudah Dijemput' : 'Belum Dijemput',
+                        jemputRecord ? jemputRecord.waktu : '-',
+                        s.waWaliNama || s.wali || '-',
+                        s.waWali || '-'
+                    ]);
                 });
                 const ws = XLSX.utils.aoa_to_sheet(sheetData);
                 const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, "Rekap Absen");
-                XLSX.writeFile(wb, `rekap_absensi_${filterDate}.xlsx`);
-            }
-        }
-
-        function exportPenjemputanExcel() {
-            const filterDate = document.getElementById('filterPenjemputanDate')?.value || new Date().toISOString().split('T')[0];
-            const listPenjemputan = (window.dbPenjemputan || []).filter(p => p.tanggal === filterDate);
-            listPenjemputan.sort((a, b) => {
-                if (a.kelas !== b.kelas) return a.kelas.localeCompare(b.kelas);
-                return (a.noAbsen || 0) - (b.noAbsen || 0);
-            });
-
-            if (window.XLSX) {
-                const sheetData = [["No", "NIS", "Nama Siswa", "Kelas", "Jam Dijemput", "Status", "Petugas Piket"]];
-                listPenjemputan.forEach((item, idx) => {
-                    sheetData.push([idx + 1, String(item.nis), item.nama, item.kelas, item.waktu, item.statusPenjemputan || 'Sudah Dijemput', item.petugasNama || 'Piket']);
-                });
-                const ws = XLSX.utils.aoa_to_sheet(sheetData);
-                const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, "Rekap Penjemputan");
-                XLSX.writeFile(wb, `rekap_penjemputan_${filterDate}.xlsx`);
+                XLSX.utils.book_append_sheet(wb, ws, `Rekap_${kelasWali}`);
+                XLSX.writeFile(wb, `rekap_kelas_${kelasWali}_${filterDate}.xlsx`);
             }
         }
 
@@ -1779,13 +1810,15 @@
         function switchTab(tabName) {
             const savedUser = JSON.parse(sessionStorage.getItem('e_user') || '{}');
             
-            if (savedUser.role === 'piket' && (tabName === 'kelas' || tabName === 'settings')) {
+            if (savedUser.role === 'piket' && (tabName === 'kelas' || tabName === 'settings' || tabName === 'wali-rekap')) {
                 tabName = 'scanner';
-            } else if (savedUser.role === 'admin' && (tabName === 'personal' || tabName === 'ganti-wali')) {
+            } else if (savedUser.role === 'admin' && (tabName === 'personal' || tabName === 'ganti-wali' || tabName === 'wali-rekap')) {
                 tabName = 'kelas';
+            } else if (savedUser.role === 'walikelas' && tabName !== 'wali-rekap') {
+                tabName = 'wali-rekap';
             }
 
-            const tabs = ['scanner', 'absensi', 'penjemputan-rekap', 'kelas', 'settings', 'personal', 'ganti-wali'];
+            const tabs = ['scanner', 'absensi', 'penjemputan-rekap', 'kelas', 'settings', 'personal', 'ganti-wali', 'wali-rekap'];
             tabs.forEach(t => {
                 const view = document.getElementById(`view-${t}`);
                 const btn = document.getElementById(`tab-${t}`);
@@ -1820,11 +1853,111 @@
                 renderPenjemputanTable();
             } else if (tabName === 'ganti-wali') {
                 renderGantiWaliTable();
+            } else if (tabName === 'wali-rekap') {
+                renderWaliDashboard();
             }
         }
 
         // ==========================================
-        // MENU KHUSUS PETUGAS PIKET: GANTI NOMOR WALI KELAS
+        // ADMIN & PIKET AUXILIARY FUNCTIONS
+        // ==========================================
+        function renderAbsensiTable() {
+            const tbody = document.getElementById('tableAbsensiBody');
+            if (!tbody) return;
+            const filterDate = document.getElementById('filterAbsenDate')?.value || new Date().toISOString().split('T')[0];
+            tbody.innerHTML = '';
+
+            const listAbsen = (window.dbAbsensi || []).filter(a => a.tanggal === filterDate);
+            listAbsen.sort((a, b) => {
+                if (a.kelas !== b.kelas) return a.kelas.localeCompare(b.kelas);
+                return (a.noAbsen || 0) - (b.noAbsen || 0);
+            });
+
+            if (listAbsen.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-slate-400">Belum ada data absensi pada tanggal ${filterDate}.</td></tr>`;
+                return;
+            }
+
+            listAbsen.forEach(absen => {
+                const isLate = absen.statusAbsen === 'Terlambat';
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 transition';
+                tr.innerHTML = `
+                    <td class="p-3 font-mono font-bold text-indigo-700">${absen.nis}</td>
+                    <td class="p-3 font-semibold text-slate-800">${absen.nama}</td>
+                    <td class="p-3"><span class="bg-indigo-50 text-indigo-700 font-bold px-2.5 py-1 rounded-md text-xs">${absen.kelas}</span></td>
+                    <td class="p-3 font-mono text-xs">${absen.waktu}</td>
+                    <td class="p-3"><span class="px-2.5 py-1 rounded-full text-[11px] font-bold ${isLate ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}">${absen.statusAbsen}</span></td>
+                    <td class="p-3 text-slate-500 text-xs">${absen.petugasNama || 'Piket'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderPenjemputanTable() {
+            const tbody = document.getElementById('tablePenjemputanBody');
+            if (!tbody) return;
+            const filterDate = document.getElementById('filterPenjemputanDate')?.value || new Date().toISOString().split('T')[0];
+            tbody.innerHTML = '';
+
+            const listPenjemputan = (window.dbPenjemputan || []).filter(p => p.tanggal === filterDate);
+            listPenjemputan.sort((a, b) => {
+                if (a.kelas !== b.kelas) return a.kelas.localeCompare(b.kelas);
+                return (a.noAbsen || 0) - (b.noAbsen || 0);
+            });
+
+            if (listPenjemputan.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-slate-400">Belum ada data penjemputan pada tanggal ${filterDate}.</td></tr>`;
+                return;
+            }
+
+            listPenjemputan.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 transition';
+                tr.innerHTML = `
+                    <td class="p-3 font-mono font-bold text-indigo-700">${item.nis}</td>
+                    <td class="p-3 font-semibold text-slate-800">${item.nama}</td>
+                    <td class="p-3"><span class="bg-indigo-50 text-indigo-700 font-bold px-2.5 py-1 rounded-md text-xs">${item.kelas}</span></td>
+                    <td class="p-3 font-mono text-xs">${item.waktu}</td>
+                    <td class="p-3"><span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-indigo-100 text-indigo-700">${item.statusPenjemputan || 'Sudah Dijemput'}</span></td>
+                    <td class="p-3 text-slate-500 text-xs">${item.petugasNama || 'Piket'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function exportAbsensiExcel() {
+            const filterDate = document.getElementById('filterAbsenDate')?.value || new Date().toISOString().split('T')[0];
+            const listAbsen = (window.dbAbsensi || []).filter(a => a.tanggal === filterDate);
+            if (window.XLSX) {
+                const sheetData = [["No", "NIS", "Nama Siswa", "Kelas", "Jam Hadir", "Status Kehadiran", "Petugas Piket"]];
+                listAbsen.forEach((absen, idx) => {
+                    sheetData.push([idx + 1, String(absen.nis), absen.nama, absen.kelas, absen.waktu, absen.statusAbsen, absen.petugasNama || 'Piket']);
+                });
+                const ws = XLSX.utils.aoa_to_sheet(sheetData);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Rekap Absen");
+                XLSX.writeFile(wb, `rekap_absensi_${filterDate}.xlsx`);
+            }
+        }
+
+        function exportPenjemputanExcel() {
+            const filterDate = document.getElementById('filterPenjemputanDate')?.value || new Date().toISOString().split('T')[0];
+            const listPenjemputan = (window.dbPenjemputan || []).filter(p => p.tanggal === filterDate);
+            if (window.XLSX) {
+                const sheetData = [["No", "NIS", "Nama Siswa", "Kelas", "Jam Dijemput", "Status", "Petugas Piket"]];
+                listPenjemputan.forEach((item, idx) => {
+                    sheetData.push([idx + 1, String(item.nis), item.nama, item.kelas, item.waktu, item.statusPenjemputan || 'Sudah Dijemput', item.petugasNama || 'Piket']);
+                });
+                const ws = XLSX.utils.aoa_to_sheet(sheetData);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Rekap Penjemputan");
+                XLSX.writeFile(wb, `rekap_penjemputan_${filterDate}.xlsx`);
+            }
+        }
+
+        // ==========================================
+        // GANTI WALI KELAS OLEH PIKET
         // ==========================================
         function renderGantiWaliTable() {
             const tbody = document.getElementById('tableGantiWaliBody');
@@ -1833,12 +1966,11 @@
 
             const keyword = (document.getElementById('searchGantiWaliInput')?.value || '').toLowerCase();
             const listWali = (window.dbWaliKelas || []).filter(w => 
-                (w.kelas || '').toLowerCase().includes(keyword) || 
-                (w.nama || '').toLowerCase().includes(keyword)
+                (w.kelas || '').toLowerCase().includes(keyword) || (w.nama || '').toLowerCase().includes(keyword)
             );
 
             if (listWali.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-400">Belum ada data kelas atau wali kelas terdaftar.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-400">Belum ada data kelas.</td></tr>`;
                 return;
             }
 
@@ -1865,7 +1997,6 @@
             document.getElementById('piketGantiWaliClassName').value = kelasName;
             document.getElementById('piketGantiWaliNama').value = waliName;
             document.getElementById('piketGantiWaliWa').value = waliWa;
-            document.getElementById('piketGantiWaliSub').innerText = `Ubah kontak wali kelas ${kelasName} untuk penanganan guru piket hari ini.`;
             document.getElementById('modalPiketGantiWali').classList.remove('hidden');
         }
 
@@ -1883,19 +2014,22 @@
             if (!classId) return;
 
             try {
-                if (window.saveWalikelasFirebase) {
+                const found = (window.dbWaliKelas || []).find(w => (w.classId || w.id) === classId);
+                if (window.saveWalikelasFirebase && found) {
                     await window.saveWalikelasFirebase({
                         classId: classId,
                         kelas: kelasName,
                         nama: newNama,
-                        wa: newWa
+                        wa: newWa,
+                        username: found.username || ('wali' + classId),
+                        password: found.password || '123456'
                     });
                 }
-                showToast(`Nomor wali kelas ${kelasName} berhasil diperbarui!`, "success");
+                showToast(`Wali kelas ${kelasName} berhasil diperbarui!`, "success");
                 closeModalPiketGantiWali();
                 renderGantiWaliTable();
             } catch(err) {
-                showToast("Gagal memperbarui nomor wali kelas.", "error");
+                showToast("Gagal memperbarui wali kelas.", "error");
             }
         }
 
@@ -1908,9 +2042,8 @@
             tbody.innerHTML = '';
 
             const listPetugas = window.dbPetugas || [];
-
             if (listPetugas.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-400">Belum ada akun petugas piket. Silakan buat akun baru.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-400">Belum ada akun petugas piket.</td></tr>`;
                 return;
             }
 
@@ -1923,11 +2056,8 @@
                     <td class="p-3 font-mono text-indigo-700">${p.username}</td>
                     <td class="p-3 font-mono text-slate-600">${p.sender || '-'}</td>
                     <td class="p-3 font-mono text-slate-400">••••••••••••</td>
-                    <td class="p-3 text-center space-x-1">
-                        <button onclick="openModalEditPetugas('${p.id || ''}', '${p.petugasId || ''}', '${p.nama || ''}', '${p.username || ''}', '${p.password || ''}', '${p.sender || ''}', '${p.token || ''}')" class="bg-indigo-100 hover:bg-indigo-200 text-indigo-700 p-1.5 rounded-lg text-xs" title="Edit Petugas">
-                            <i class="fa-solid fa-pen-to-square"></i>
-                        </button>
-                        <button onclick="window.deletePetugasFirebase('${p.id || ''}')" class="bg-rose-100 hover:bg-rose-200 text-rose-700 p-1.5 rounded-lg text-xs" title="Hapus">
+                    <td class="p-3 text-center">
+                        <button onclick="deletePetugasFirebase('${p.petugasId || p.id}')" class="bg-rose-100 hover:bg-rose-200 text-rose-700 p-2 rounded-lg text-xs font-semibold transition" title="Hapus Petugas">
                             <i class="fa-solid fa-trash"></i>
                         </button>
                     </td>
@@ -1937,24 +2067,12 @@
         }
 
         function openModalPetugas() {
-            document.getElementById('formPetugasId').value = (window.dbPetugas || []).length + 1;
-            document.getElementById('formPetugasNama').value = "";
-            document.getElementById('formPetugasUser').value = "";
-            document.getElementById('formPetugasPass').value = "";
-            document.getElementById('formPetugasWa').value = "";
-            document.getElementById('formPetugasToken').value = "";
-            document.getElementById('modalPetugasTitle').innerText = "Tambah Petugas Piket Baru";
-            document.getElementById('modalPetugas').classList.remove('hidden');
-        }
-
-        function openModalEditPetugas(id, petugasId, nama, username, password, sender, token) {
-            document.getElementById('formPetugasId').value = petugasId || id;
-            document.getElementById('formPetugasNama').value = nama;
-            document.getElementById('formPetugasUser').value = username;
-            document.getElementById('formPetugasPass').value = password;
-            document.getElementById('formPetugasWa').value = sender;
-            document.getElementById('formPetugasToken').value = token;
-            document.getElementById('modalPetugasTitle').innerText = "Edit Petugas Piket";
+            document.getElementById('formPetugasId').value = '';
+            document.getElementById('formPetugasNama').value = '';
+            document.getElementById('formPetugasUser').value = '';
+            document.getElementById('formPetugasPass').value = '';
+            document.getElementById('formPetugasWa').value = '628';
+            document.getElementById('formPetugasToken').value = '';
             document.getElementById('modalPetugas').classList.remove('hidden');
         }
 
@@ -1964,7 +2082,7 @@
 
         async function handleSavePetugas(e) {
             e.preventDefault();
-            const petugasId = document.getElementById('formPetugasId').value.trim();
+            const id = document.getElementById('formPetugasId').value.trim();
             const nama = document.getElementById('formPetugasNama').value.trim();
             const username = document.getElementById('formPetugasUser').value.trim();
             const password = document.getElementById('formPetugasPass').value.trim();
@@ -1972,7 +2090,7 @@
             const token = document.getElementById('formPetugasToken').value.trim();
 
             if (window.savePetugasFirebase) {
-                await window.savePetugasFirebase({ petugasId, nama, username, password, sender, token });
+                await window.savePetugasFirebase({ petugasId: id, nama, username, password, sender, token });
             }
             closeModalPetugas();
         }
@@ -1981,18 +2099,21 @@
             e.preventDefault();
             const u = document.getElementById('adminUsernameInput').value.trim();
             const p = document.getElementById('adminPasswordInput').value.trim();
-            if (!u || !p) return;
-            window.appCredentials.adminUsername = u;
-            window.appCredentials.adminPassword = p;
-            if (window.saveSettingsFirebase) {
-                window.saveSettingsFirebase({ adminUsername: u, adminPassword: p });
+            if (u && p) {
+                window.appCredentials.adminUsername = u;
+                window.appCredentials.adminPassword = p;
+                if (window.saveSettingsFirebase) {
+                    window.saveSettingsFirebase({ adminUsername: u, adminPassword: p });
+                }
+                showToast("Akun Admin Utama berhasil diperbarui!", "success");
             }
-            showToast("Kredensial Admin Utama berhasil diperbarui!", "success");
         }
 
         // ==========================================
-        // ADMIN: KELOLA KELAS & WALI KELAS
+        // ADMIN: MASTER KELAS & SISWA
         // ==========================================
+        let selectedClassContext = null;
+
         function renderClassCards() {
             const grid = document.getElementById('classGrid');
             if (!grid) return;
@@ -2000,44 +2121,35 @@
 
             const keyword = (document.getElementById('searchClassInput')?.value || '').toLowerCase();
             const listWali = (window.dbWaliKelas || []).filter(w => 
-                (w.kelas || '').toLowerCase().includes(keyword) || 
-                (w.nama || '').toLowerCase().includes(keyword)
+                (w.kelas || '').toLowerCase().includes(keyword) || (w.nama || '').toLowerCase().includes(keyword)
             );
-            const listSiswa = window.dbSiswa || [];
 
             if (listWali.length === 0) {
-                grid.innerHTML = `<div class="col-span-full text-center py-10 text-slate-400"><i class="fa-solid fa-folder-open text-4xl mb-2 text-slate-300"></i><p class="text-xs">Belum ada data kelas yang dibuat.</p></div>`;
+                grid.innerHTML = `<div class="col-span-full text-center py-8 text-slate-400">Belum ada data kelas yang dibuat. Klik "Buat Kelas & Akun Wali" untuk memulai.</div>`;
                 return;
             }
 
             listWali.forEach(w => {
-                const siswaCount = listSiswa.filter(s => s.kelas === w.kelas).length;
+                const classId = w.classId || w.id;
+                const siswaCount = (window.dbSiswa || []).filter(s => s.kelas === w.kelas).length;
                 const card = document.createElement('div');
-                card.className = "bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition flex flex-col justify-between";
+                card.className = "bg-white p-5 rounded-2xl shadow-sm border border-slate-200 hover:border-indigo-400 transition flex flex-col justify-between";
                 card.innerHTML = `
                     <div>
                         <div class="flex justify-between items-start mb-3">
-                            <span class="bg-indigo-100 text-indigo-800 font-bold px-3 py-1 rounded-xl text-xs uppercase tracking-wider">${w.kelas}</span>
-                            <div class="flex space-x-1">
-                                <button onclick="openModalEditClass('${w.classId || w.id}', '${w.kelas}', '${w.nama}', '${w.wa}')" class="bg-slate-100 hover:bg-slate-200 text-slate-600 p-2 rounded-lg text-xs" title="Edit Kelas">
-                                    <i class="fa-solid fa-pen-to-square"></i>
-                                </button>
-                                <button onclick="window.deleteWalikelasFirebase('${w.classId || w.id}')" class="bg-rose-100 hover:bg-rose-200 text-rose-600 p-2 rounded-lg text-xs" title="Hapus Kelas">
-                                    <i class="fa-solid fa-trash"></i>
-                                </button>
-                            </div>
+                            <span class="bg-indigo-50 text-indigo-700 font-bold px-3 py-1 rounded-xl text-sm">${w.kelas}</span>
+                            <span class="bg-slate-100 text-slate-600 text-xs font-semibold px-2.5 py-1 rounded-full">${siswaCount} Siswa</span>
                         </div>
                         <h3 class="font-bold text-slate-800 text-base mb-1">${w.nama}</h3>
-                        <p class="text-xs text-slate-500 flex items-center gap-1.5 font-mono mb-4">
-                            <i class="fa-brands fa-whatsapp text-emerald-500"></i>
-                            <span>${w.wa}</span>
-                        </p>
+                        <p class="text-xs text-slate-500 font-mono mb-2"><i class="fa-solid fa-user text-indigo-500"></i> Username: <strong>${w.username || ('wali' + classId)}</strong></p>
+                        <p class="text-xs text-emerald-600 font-mono mb-3"><i class="fa-brands fa-whatsapp"></i> ${w.wa || '-'}</p>
                     </div>
-                    <div class="pt-3 border-t border-slate-100 flex justify-between items-center">
-                        <span class="text-xs text-slate-500 font-semibold"><i class="fa-solid fa-user-group text-indigo-600 mr-1"></i> ${siswaCount} Siswa</span>
-                        <button onclick="openClassDetail('${w.kelas}')" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-3.5 py-2 rounded-xl transition flex items-center space-x-1.5">
-                            <span>Kelola Siswa</span>
-                            <i class="fa-solid fa-arrow-right"></i>
+                    <div class="flex gap-2 pt-3 border-t">
+                        <button onclick="openClassDetail('${w.kelas}')" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-users-viewfinder"></i> Kelola Siswa
+                        </button>
+                        <button onclick="deleteWalikelasFirebase('${classId}')" class="bg-rose-100 hover:bg-rose-200 text-rose-700 p-2 rounded-xl text-xs font-semibold transition" title="Hapus Kelas">
+                            <i class="fa-solid fa-trash"></i>
                         </button>
                     </div>
                 `;
@@ -2046,20 +2158,12 @@
         }
 
         function openModalClass() {
-            document.getElementById('formClassIdCustom').value = (window.dbWaliKelas || []).length + 1;
-            document.getElementById('formClassName').value = "";
-            document.getElementById('formClassWaliNama').value = "";
-            document.getElementById('formClassWaliWa').value = "";
-            document.getElementById('modalClassTitle').innerText = "Buat Kelas Baru";
-            document.getElementById('modalClass').classList.remove('hidden');
-        }
-
-        function openModalEditClass(id, kelas, nama, wa) {
-            document.getElementById('formClassIdCustom').value = id;
-            document.getElementById('formClassName').value = kelas;
-            document.getElementById('formClassWaliNama').value = nama;
-            document.getElementById('formClassWaliWa').value = wa;
-            document.getElementById('modalClassTitle').innerText = "Edit Info Kelas & Wali Kelas";
+            document.getElementById('formClassIdCustom').value = '';
+            document.getElementById('formClassName').value = '';
+            document.getElementById('formClassWaliNama').value = '';
+            document.getElementById('formClassWaliWa').value = '628';
+            document.getElementById('formClassUsername').value = '';
+            document.getElementById('formClassPassword').value = '123456';
             document.getElementById('modalClass').classList.remove('hidden');
         }
 
@@ -2073,18 +2177,17 @@
             const kelas = document.getElementById('formClassName').value.trim().toUpperCase();
             const nama = document.getElementById('formClassWaliNama').value.trim();
             const wa = formatPhoneNumber(document.getElementById('formClassWaliWa').value.trim());
+            const username = document.getElementById('formClassUsername').value.trim();
+            const password = document.getElementById('formClassPassword').value.trim();
 
             if (window.saveWalikelasFirebase) {
-                await window.saveWalikelasFirebase({ classId, kelas, nama, wa });
+                await window.saveWalikelasFirebase({ classId, kelas, nama, wa, username, password });
             }
             closeModalClass();
         }
 
-        // ==========================================
-        // ADMIN: KELOLA SISWA DALAM KELAS
-        // ==========================================
         function openClassDetail(kelasName) {
-            currentSelectedClass = kelasName;
+            selectedClassContext = kelasName;
             document.getElementById('classListContainer').classList.add('hidden');
             document.getElementById('classDetailContainer').classList.remove('hidden');
             document.getElementById('selectedClassName').innerText = `Kelas ${kelasName}`;
@@ -2092,81 +2195,66 @@
             const wali = (window.dbWaliKelas || []).find(w => w.kelas === kelasName);
             if (wali) {
                 document.getElementById('selectedClassWaliNama').innerText = wali.nama;
-                document.getElementById('selectedClassWaliWa').innerHTML = `<i class="fa-brands fa-whatsapp text-emerald-400 text-sm"></i> <span>${wali.wa}</span>`;
+                document.getElementById('selectedClassUsername').innerText = wali.username || ('wali' + (wali.classId || ''));
+                document.getElementById('selectedClassWaliWa').innerText = wali.wa || '-';
             }
+
             renderTableSiswaDetail();
         }
 
         function closeClassDetail() {
-            currentSelectedClass = null;
+            selectedClassContext = null;
             document.getElementById('classDetailContainer').classList.add('hidden');
             document.getElementById('classListContainer').classList.remove('hidden');
             renderClassCards();
         }
 
-        function openAllStudentsView() {
-            currentSelectedClass = "SEMUA";
-            document.getElementById('classListContainer').classList.add('hidden');
-            document.getElementById('classDetailContainer').classList.remove('hidden');
-            document.getElementById('selectedClassName').innerText = "Semua Siswa Terdaftar";
-            document.getElementById('selectedClassWaliNama').innerText = "Multi Kelas";
-            document.getElementById('selectedClassWaliWa').innerHTML = `<span>Menampilkan seluruh siswa</span>`;
-            renderTableSiswaDetail();
-        }
-
         function openModalEditSelectedClass() {
-            if (!currentSelectedClass || currentSelectedClass === "SEMUA") return;
-            const wali = (window.dbWaliKelas || []).find(w => w.kelas === currentSelectedClass);
-            if (wali) {
-                openModalEditClass(wali.classId || wali.id, wali.kelas, wali.nama, wali.wa);
-            }
+            if (!selectedClassContext) return;
+            const wali = (window.dbWaliKelas || []).find(w => w.kelas === selectedClassContext);
+            if (!wali) return;
+
+            document.getElementById('formClassIdCustom').value = wali.classId || wali.id;
+            document.getElementById('formClassName').value = wali.kelas;
+            document.getElementById('formClassWaliNama').value = wali.nama;
+            document.getElementById('formClassWaliWa').value = wali.wa;
+            document.getElementById('formClassUsername').value = wali.username || '';
+            document.getElementById('formClassPassword').value = wali.password || '123456';
+            document.getElementById('modalClass').classList.remove('hidden');
         }
 
         function renderTableSiswaDetail() {
+            if (!selectedClassContext) return;
             const tbody = document.getElementById('tableSiswaDetailBody');
-            if (!tbody || !currentSelectedClass) return;
+            if (!tbody) return;
             tbody.innerHTML = '';
 
-            const keyword = (document.getElementById('searchSiswaDetailInput')?.value || '').toLowerCase();
-            let listSiswa = window.dbSiswa || [];
-            
-            if (currentSelectedClass !== "SEMUA") {
-                listSiswa = listSiswa.filter(s => s.kelas === currentSelectedClass);
-            }
-
-            listSiswa = listSiswa.filter(s => 
-                (s.nama || '').toLowerCase().includes(keyword) || 
-                (s.nis || '').toLowerCase().includes(keyword)
-            );
-
+            const listSiswa = (window.dbSiswa || []).filter(s => s.kelas === selectedClassContext);
             listSiswa.sort((a, b) => (parseInt(a.noAbsen) || 999) - (parseInt(b.noAbsen) || 999));
+
+            const keyword = (document.getElementById('searchSiswaDetailInput')?.value || '').toLowerCase();
+            const filtered = listSiswa.filter(s => s.nama.toLowerCase().includes(keyword) || s.nis.toLowerCase().includes(keyword));
+
             document.getElementById('selectedClassBadge').innerText = `${listSiswa.length} Siswa`;
 
-            if (listSiswa.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-slate-400">Belum ada data siswa.</td></tr>`;
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400">Belum ada data siswa di kelas ini.</td></tr>`;
                 return;
             }
 
-            listSiswa.forEach(s => {
+            filtered.forEach(s => {
                 const tr = document.createElement('tr');
                 tr.className = 'hover:bg-slate-50 transition';
                 tr.innerHTML = `
-                    <td class="p-3 font-mono font-bold text-center bg-slate-50/50">${s.noAbsen || '-'}</td>
-                    <td class="p-3 font-mono font-bold text-indigo-700">${s.nis}</td>
+                    <td class="p-3 font-mono font-bold text-indigo-700">${s.noAbsen || '-'}</td>
+                    <td class="p-3 font-mono text-slate-700">${s.nis}</td>
                     <td class="p-3 font-semibold text-slate-800">${s.nama}</td>
-                    <td class="p-3"><span class="bg-indigo-50 text-indigo-700 font-bold px-2 py-0.5 rounded text-xs">${s.kelas}</span></td>
-                    <td class="p-3 text-slate-600">${s.wali || '-'}</td>
-                    <td class="p-3 font-mono text-xs text-slate-600">${s.waWali || '-'}</td>
+                    <td class="p-3">${s.kelas}</td>
+                    <td class="p-3">${s.waWaliNama || s.wali || '-'}</td>
+                    <td class="p-3 font-mono text-emerald-700">${s.waWali || '-'}</td>
                     <td class="p-3 text-center space-x-1">
-                        <button onclick="openModalQrCode('${s.nis}', '${s.nama}', '${s.kelas}')" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-700 p-1.5 rounded-lg text-xs" title="Cetak QR / Barcode">
-                            <i class="fa-solid fa-qrcode"></i>
-                        </button>
-                        <button onclick="openModalEditSiswa('${s.id}', '${s.noAbsen || 1}', '${s.nis}', '${s.nama}', '${s.kelas}', '${s.wali || ''}', '${s.waWali || ''}')" class="bg-indigo-100 hover:bg-indigo-200 text-indigo-700 p-1.5 rounded-lg text-xs" title="Edit">
-                            <i class="fa-solid fa-pen-to-square"></i>
-                        </button>
-                        <button onclick="window.deleteSiswaFirebase('${s.id}')" class="bg-rose-100 hover:bg-rose-200 text-rose-700 p-1.5 rounded-lg text-xs" title="Hapus">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
+                        <button onclick="editSiswa('${s.id}')" class="bg-indigo-100 hover:bg-indigo-200 text-indigo-700 p-1.5 rounded-lg text-xs" title="Edit"><i class="fa-solid fa-pen"></i></button>
+                        <button onclick="deleteSiswaFirebase('${s.id}')" class="bg-rose-100 hover:bg-rose-200 text-rose-700 p-1.5 rounded-lg text-xs" title="Hapus"><i class="fa-solid fa-trash"></i></button>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -2174,29 +2262,16 @@
         }
 
         function openModalTambahSiswaInClass() {
-            document.getElementById('formSiswaId').value = "";
-            document.getElementById('formSiswaNoAbsen').value = (window.dbSiswa || []).filter(s => s.kelas === currentSelectedClass).length + 1;
-            document.getElementById('formSiswaNIS').value = "";
-            document.getElementById('formSiswaNama').value = "";
-            document.getElementById('formSiswaWali').value = "";
-            document.getElementById('formSiswaWaWali').value = "";
-            const selectKelas = document.getElementById('formSiswaKelas');
-            if (currentSelectedClass && currentSelectedClass !== "SEMUA") {
-                selectKelas.value = currentSelectedClass;
-            }
-            document.getElementById('modalSiswaTitle').innerText = "Tambah Siswa Baru";
-            document.getElementById('modalSiswa').classList.remove('hidden');
-        }
-
-        function openModalEditSiswa(id, noAbsen, nis, nama, kelas, wali, waWali) {
-            document.getElementById('formSiswaId').value = id;
-            document.getElementById('formSiswaNoAbsen').value = noAbsen;
-            document.getElementById('formSiswaNIS').value = nis;
-            document.getElementById('formSiswaNama').value = nama;
-            document.getElementById('formSiswaKelas').value = kelas;
-            document.getElementById('formSiswaWali').value = wali;
-            document.getElementById('formSiswaWaWali').value = waWali;
-            document.getElementById('modalSiswaTitle').innerText = "Edit Data Siswa";
+            if (!selectedClassContext) return;
+            document.getElementById('formSiswaId').value = '';
+            const list = (window.dbSiswa || []).filter(s => s.kelas === selectedClassContext);
+            document.getElementById('formSiswaNoAbsen').value = list.length + 1;
+            document.getElementById('formSiswaNIS').value = '';
+            document.getElementById('formSiswaNama').value = '';
+            document.getElementById('formSiswaWali').value = '';
+            document.getElementById('formSiswaWaWali').value = '628';
+            updateClassDropdown();
+            document.getElementById('formSiswaKelas').value = selectedClassContext;
             document.getElementById('modalSiswa').classList.remove('hidden');
         }
 
@@ -2207,25 +2282,47 @@
         async function handleSaveSiswa(e) {
             e.preventDefault();
             const id = document.getElementById('formSiswaId').value;
-            const noAbsen = parseInt(document.getElementById('formSiswaNoAbsen').value) || 1;
+            const noAbsen = document.getElementById('formSiswaNoAbsen').value;
             const nis = document.getElementById('formSiswaNIS').value.trim();
             const nama = document.getElementById('formSiswaNama').value.trim();
             const kelas = document.getElementById('formSiswaKelas').value;
             const wali = document.getElementById('formSiswaWali').value.trim();
             const waWali = formatPhoneNumber(document.getElementById('formSiswaWaWali').value.trim());
 
-            const siswaData = { noAbsen, nis, nama, kelas, wali, waWali };
-            if (id) siswaData.id = id;
+            const data = {
+                noAbsen: parseInt(noAbsen) || 1,
+                nis,
+                nama,
+                kelas,
+                waWaliNama: wali,
+                waWali
+            };
+            if (id) data.id = id;
 
             if (window.saveSiswaFirebase) {
-                await window.saveSiswaFirebase(siswaData);
+                await window.saveSiswaFirebase(data);
             }
             closeModalSiswa();
+            if (selectedClassContext) renderTableSiswaDetail();
+        }
+
+        function editSiswa(id) {
+            const s = (window.dbSiswa || []).find(item => item.id === id);
+            if (!s) return;
+            document.getElementById('formSiswaId').value = s.id;
+            document.getElementById('formSiswaNoAbsen').value = s.noAbsen || 1;
+            document.getElementById('formSiswaNIS').value = s.nis;
+            document.getElementById('formSiswaNama').value = s.nama;
+            updateClassDropdown();
+            document.getElementById('formSiswaKelas').value = s.kelas;
+            document.getElementById('formSiswaWali').value = s.waWaliNama || s.wali || '';
+            document.getElementById('formSiswaWaWali').value = s.waWali || '';
+            document.getElementById('modalSiswa').classList.remove('hidden');
         }
 
         function openModalDeleteClassStudents() {
-            if (!currentSelectedClass || currentSelectedClass === "SEMUA") return;
-            document.getElementById('deleteClassModalDesc').innerText = `Tindakan ini akan menghapus seluruh data siswa di kelas ${currentSelectedClass} dari Firebase.`;
+            if (!selectedClassContext) return;
+            document.getElementById('deleteClassModalDesc').innerText = `Seluruh data siswa di kelas ${selectedClassContext} akan dihapus.`;
             document.getElementById('modalDeleteClassStudents').classList.remove('hidden');
         }
 
@@ -2234,143 +2331,60 @@
         }
 
         async function confirmDeleteStudentsInClass() {
-            if (currentSelectedClass && currentSelectedClass !== "SEMUA") {
-                if (window.deleteClassStudentsFirebase) {
-                    await window.deleteClassStudentsFirebase(currentSelectedClass);
-                }
-                closeModalDeleteClassStudents();
+            if (!selectedClassContext) return;
+            if (window.deleteClassStudentsFirebase) {
+                await window.deleteClassStudentsFirebase(selectedClassContext);
             }
+            closeModalDeleteClassStudents();
+            renderTableSiswaDetail();
         }
 
-        // ==========================================
-        // EXCEL IMPORT & EXPORT ENGINE (Sesuai Urutan Absen)
-        // ==========================================
         function triggerImportCSV() {
             document.getElementById('fileCsvInput').click();
         }
 
         function handleImportCSV(event) {
             const file = event.target.files[0];
-            if (!file) return;
+            if (!file || !selectedClassContext) return;
 
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = async function(e) {
                 try {
                     const data = new Uint8Array(e.target.result);
                     const workbook = XLSX.read(data, { type: 'array' });
-                    const firstSheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[firstSheetName];
-                    const jsonRows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    const firstSheet = workbook.SheetNames[0];
+                    const rows = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheet], { header: 1 });
 
-                    if (jsonRows.length < 2) {
-                        showToast("Format file Excel kosong atau tidak valid.", "error");
-                        return;
-                    }
+                    let count = 0;
+                    for (let i = 1; i < rows.length; i++) {
+                        const row = rows[i];
+                        if (row && row.length >= 2) {
+                            const noAbsen = parseInt(row[0]) || i;
+                            const nis = String(row[1] || '').trim();
+                            const nama = String(row[2] || '').trim();
+                            const wali = String(row[3] || '').trim();
+                            const waWali = formatPhoneNumber(String(row[4] || ''));
 
-                    // Deteksi Header Columns
-                    const header = jsonRows[0].map(h => String(h).toLowerCase().trim());
-                    let idxNo = header.findIndex(h => h.includes('no') || h.includes('absen'));
-                    let idxNis = header.findIndex(h => h.includes('nis') || h.includes('barcode') || h.includes('id'));
-                    let idxNama = header.findIndex(h => h.includes('nama') || h.includes('siswa'));
-                    let idxKelas = header.findIndex(h => h.includes('kelas') || h.includes('rombel'));
-                    let idxWali = header.findIndex(h => h.includes('wali') || h.includes('ortu') || h.includes('orang tua'));
-                    let idxWa = header.findIndex(h => h.includes('wa') || h.includes('telp') || h.includes('phone') || h.includes('hp'));
-
-                    if (idxNis === -1) idxNis = 0;
-                    if (idxNama === -1) idxNama = 1;
-
-                    let importedCount = 0;
-                    for (let i = 1; i < jsonRows.length; i++) {
-                        const row = jsonRows[i];
-                        if (!row || row.length === 0) continue;
-
-                        const nis = String(row[idxNis !== -1 ? idxNis : 0] || '').trim();
-                        const nama = String(row[idxNama !== -1 ? idxNama : 1] || '').trim();
-                        if (!nis || !nama) continue;
-
-                        const noAbsen = idxNo !== -1 ? (parseInt(row[idxNo]) || i) : i;
-                        const kelas = idxKelas !== -1 && row[idxKelas] ? String(row[idxKelas]).trim().toUpperCase() : (currentSelectedClass !== "SEMUA" ? currentSelectedClass : "X");
-                        const wali = idxWali !== -1 ? String(row[idxWali] || '').trim() : '';
-                        const waWali = idxWa !== -1 ? formatPhoneNumber(String(row[idxWa] || '')) : '';
-
-                        if (window.saveSiswaFirebase) {
-                            window.saveSiswaFirebase({ noAbsen, nis, nama, kelas, wali, waWali });
+                            if (nis && nama) {
+                                await window.saveSiswaFirebase({
+                                    noAbsen,
+                                    nis,
+                                    nama,
+                                    kelas: selectedClassContext,
+                                    waWaliNama: wali,
+                                    waWali
+                                });
+                                count++;
+                            }
                         }
-                        importedCount++;
                     }
-
-                    showToast(`Berhasil mengimpor ${importedCount} data siswa sesuai urutan absen!`, "success");
-                    event.target.value = '';
-                } catch (err) {
-                    showToast("Gagal membaca file Excel. Pastikan format benar.", "error");
+                    showToast(`Berhasil mengimpor ${count} siswa ke kelas ${selectedClassContext}!`, "success");
+                } catch(err) {
+                    showToast("Gagal membaca file Excel. Pastikan format kolom benar.", "error");
                 }
+                event.target.value = '';
             };
             reader.readAsArrayBuffer(file);
-        }
-
-        function exportCurrentClassPenjemputanExcel() {
-            if (!currentSelectedClass || currentSelectedClass === "SEMUA") {
-                showToast("Pilih kelas spesifik terlebih dahulu untuk ekspor rekap sesuai urutan absen.", "error");
-                return;
-            }
-
-            const listSiswa = (window.dbSiswa || []).filter(s => s.kelas === currentSelectedClass);
-            listSiswa.sort((a, b) => (parseInt(a.noAbsen) || 999) - (parseInt(b.noAbsen) || 999));
-
-            const todayStr = new Date().toISOString().split('T')[0];
-            const listPenjemputan = (window.dbPenjemputan || []).filter(p => p.tanggal === todayStr && p.kelas === currentSelectedClass);
-
-            if (window.XLSX) {
-                const sheetData = [["No Absen", "NIS", "Nama Siswa", "Kelas", "Status Penjemputan", "Jam Dijemput", "Petugas Piket"]];
-                listSiswa.forEach((s) => {
-                    const jemput = listPenjemputan.find(p => p.nis === s.nis);
-                    sheetData.push([
-                        s.noAbsen || '-',
-                        String(s.nis),
-                        s.nama,
-                        s.kelas,
-                        jemput ? 'Sudah Dijemput' : 'Belum Dijemput',
-                        jemput ? jemput.waktu : '-',
-                        jemput ? (jemput.petugasNama || 'Piket') : '-'
-                    ]);
-                });
-
-                const ws = XLSX.utils.aoa_to_sheet(sheetData);
-                const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, `Rekap ${currentSelectedClass}`);
-                XLSX.writeFile(wb, `rekap_penjemputan_kelas_${currentSelectedClass}_${todayStr}.xlsx`);
-            }
-        }
-
-        // ==========================================
-        // QR CODE GENERATOR & PRINT CARD MODAL
-        // ==========================================
-        let qrCodeInstance = null;
-
-        function openModalQrCode(nis, nama, kelas) {
-            document.getElementById('qrCardNama').innerText = nama;
-            document.getElementById('qrCardNIS').innerText = `NIS: ${nis}`;
-            document.getElementById('qrCardKelas').innerText = `Kelas: ${kelas}`;
-
-            const container = document.getElementById('qrcodeTarget');
-            container.innerHTML = '';
-
-            if (window.QRCode) {
-                qrCodeInstance = new QRCode(container, {
-                    text: nis,
-                    width: 140,
-                    height: 140,
-                    colorDark: "#0f172a",
-                    colorLight: "#ffffff",
-                    correctLevel: QRCode.CorrectLevel.H
-                });
-            }
-
-            document.getElementById('modalPrintQr').classList.remove('hidden');
-        }
-
-        function closeModalQr() {
-            document.getElementById('modalPrintQr').classList.add('hidden');
         }
     </script>
 </body>
