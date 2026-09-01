@@ -1663,7 +1663,7 @@
             const currentUser = JSON.parse(sessionStorage.getItem('e_user') || '{}');
             const petugasName = currentUser.name || 'Petugas Piket';
 
-            const pesanNotifikasi = `*[NOTIFIKASI PENJEMPUTAN]*\n\nSiswa *${siswa.nama}* kelas *${siswa.kelas}* telah dijemput.\nPetugas Piket: ${petugasName}.`;
+            const pesanNotifikasi = `*[Penjemputan Gama]*\n\nMurid *${siswa.nama}* kelas *${siswa.kelas}* telah dijemput.\nPetugas Piket: ${petugasName}.`;
 
             showToast(`Penjemputan: ${siswa.nama} (${siswa.kelas})`, "success");
 
