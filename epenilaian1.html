@@ -1230,7 +1230,7 @@
         }
 
         // ==========================================
-        // WALI KELAS DASHBOARD RENDERING
+        // WALI KELAS DASHBOARD RENDERING & SORTING
         // ==========================================
         function renderWaliDashboard() {
             const currentUser = JSON.parse(sessionStorage.getItem('e_user') || '{}');
@@ -1240,8 +1240,6 @@
             const filterDate = document.getElementById('filterWaliDate')?.value || new Date().toISOString().split('T')[0];
             
             const listSiswa = (window.dbSiswa || []).filter(s => s.kelas === kelasWali);
-            listSiswa.sort((a, b) => (parseInt(a.noAbsen) || 999) - (parseInt(b.noAbsen) || 999));
-
             const listJemput = (window.dbPenjemputan || []).filter(p => p.tanggal === filterDate && p.kelas === kelasWali);
 
             document.getElementById('waliTotalSiswa').innerText = listSiswa.length;
@@ -1249,30 +1247,69 @@
             document.getElementById('waliTotalBelumJemput').innerText = Math.max(0, listSiswa.length - listJemput.length);
 
             const keyword = (document.getElementById('searchWaliSiswaInput')?.value || '').toLowerCase();
-            const filteredSiswa = listSiswa.filter(s => 
-                s.nama.toLowerCase().includes(keyword) || s.nis.toLowerCase().includes(keyword)
-            );
+
+            // Separate students into already picked up and not picked up groups
+            const alreadyPickedUpNisMap = new Map();
+            listJemput.forEach(p => {
+                alreadyPickedUpNisMap.set(p.nis, p);
+            });
+
+            const pickedUpList = [];
+            const notPickedUpList = [];
+
+            listSiswa.forEach(s => {
+                if (alreadyPickedUpNisMap.has(s.nis)) {
+                    pickedUpList.push({
+                        siswa: s,
+                        record: alreadyPickedUpNisMap.get(s.nis)
+                    });
+                } else {
+                    notPickedUpList.push(s);
+                }
+            });
+
+            // Sort picked up students strictly by pickup time (earliest first).
+            // Do not use noAbsen for already picked up students.
+            pickedUpList.sort((a, b) => {
+                const timeA = a.record.waktu || '';
+                const timeB = b.record.waktu || '';
+                return timeA.localeCompare(timeB);
+            });
+
+            // Sort not picked up students by noAbsen
+            notPickedUpList.sort((a, b) => (parseInt(a.noAbsen) || 999) - (parseInt(b.noAbsen) || 999));
+
+            // Combine: Picked up first (ordered by time), followed by not picked up (ordered by noAbsen)
+            let combinedOrderedList = [
+                ...pickedUpList.map(item => ({ ...item.siswa, jemputRecord: item.record, isPickedUp: true })),
+                ...notPickedUpList.map(item => ({ ...item, jemputRecord: null, isPickedUp: false }))
+            ];
+
+            // Apply keyword search filter if present
+            if (keyword) {
+                combinedOrderedList = combinedOrderedList.filter(s => 
+                    s.nama.toLowerCase().includes(keyword) || s.nis.toLowerCase().includes(keyword)
+                );
+            }
 
             const tbody = document.getElementById('tableWaliBody');
             if (!tbody) return;
             tbody.innerHTML = '';
 
-            if (filteredSiswa.length === 0) {
+            if (combinedOrderedList.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-slate-400">Belum ada data siswa untuk kelas ${kelasWali}.</td></tr>`;
                 return;
             }
 
-            filteredSiswa.forEach(s => {
-                const jemputRecord = listJemput.find(p => p.nis === s.nis);
-
+            combinedOrderedList.forEach(s => {
                 let jemputBadge = '<span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-700">Belum Dijemput</span>';
                 let jamJemput = '-';
                 let petugasPiket = '-';
 
-                if (jemputRecord) {
+                if (s.isPickedUp && s.jemputRecord) {
                     jemputBadge = `<span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-700">Sudah Dijemput</span>`;
-                    jamJemput = jemputRecord.waktu;
-                    petugasPiket = jemputRecord.petugasNama || 'Piket';
+                    jamJemput = s.jemputRecord.waktu;
+                    petugasPiket = s.jemputRecord.petugasNama || 'Piket';
                 }
 
                 const tr = document.createElement('tr');
@@ -1297,22 +1334,40 @@
             const filterDate = document.getElementById('filterWaliDate')?.value || new Date().toISOString().split('T')[0];
             
             const listSiswa = (window.dbSiswa || []).filter(s => s.kelas === kelasWali);
-            listSiswa.sort((a, b) => (parseInt(a.noAbsen) || 999) - (parseInt(b.noAbsen) || 999));
-
             const listJemput = (window.dbPenjemputan || []).filter(p => p.tanggal === filterDate && p.kelas === kelasWali);
+
+            const alreadyPickedUpNisMap = new Map();
+            listJemput.forEach(p => alreadyPickedUpNisMap.set(p.nis, p));
+
+            const pickedUpList = [];
+            const notPickedUpList = [];
+
+            listSiswa.forEach(s => {
+                if (alreadyPickedUpNisMap.has(s.nis)) {
+                    pickedUpList.push({ siswa: s, record: alreadyPickedUpNisMap.get(s.nis) });
+                } else {
+                    notPickedUpList.push(s);
+                }
+            });
+
+            pickedUpList.sort((a, b) => (a.record.waktu || '').localeCompare(b.record.waktu || ''));
+            notPickedUpList.sort((a, b) => (parseInt(a.noAbsen) || 999) - (parseInt(b.noAbsen) || 999));
+
+            const sortedExportList = [
+                ...pickedUpList.map(item => ({ ...item.siswa, jemputRecord: item.record })),
+                ...notPickedUpList.map(item => ({ ...item, jemputRecord: null }))
+            ];
 
             if (window.XLSX) {
                 const sheetData = [["No Absen", "NIS", "Nama Siswa", "Status Penjemputan", "Jam Dijemput", "Petugas Piket"]];
-                listSiswa.forEach(s => {
-                    const jemputRecord = listJemput.find(p => p.nis === s.nis);
-
+                sortedExportList.forEach(s => {
                     sheetData.push([
                         s.noAbsen || '-',
                         String(s.nis),
                         s.nama,
-                        jemputRecord ? 'Sudah Dijemput' : 'Belum Dijemput',
-                        jemputRecord ? jemputRecord.waktu : '-',
-                        jemputRecord ? (jemputRecord.petugasNama || 'Piket') : '-'
+                        s.jemputRecord ? 'Sudah Dijemput' : 'Belum Dijemput',
+                        s.jemputRecord ? s.jemputRecord.waktu : '-',
+                        s.jemputRecord ? (s.jemputRecord.petugasNama || 'Piket') : '-'
                     ]);
                 });
                 const ws = XLSX.utils.aoa_to_sheet(sheetData);
