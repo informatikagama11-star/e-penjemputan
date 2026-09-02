@@ -1182,20 +1182,23 @@
             });
         }
 
+        function normalizeNIS(value) {
+            return String(value ?? '').trim();
+        }
+
+        function normalizeKelas(value) {
+            return String(value ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
+        }
+
         async function processPenjemputanScan(nis) {
-            const listSiswa = window.dbSiswa || [];
-            const siswa = listSiswa.find(s => s.nis === nis);
-            
-            if (!siswa) {
-                showToast(`Siswa tidak ditemukan!`, "error");
-                return;
-            }
+            const normalizedNIS = normalizeNIS(nis);
+            const siswa = (window.dbSiswa || []).find(s => normalizeNIS(s.nis) === normalizedNIS);
+            if (!siswa) { showToast(`Siswa tidak ditemukan!`, "error"); return; }
 
             const todayStr = new Date().toISOString().split('T')[0];
-            const existingPenjemputan = (window.dbPenjemputan || []).find(p => p.nis === nis && p.tanggal === todayStr);
-
-            const jamPenjemputan = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-
+            const existingPenjemputan = (window.dbPenjemputan || []).find(p =>
+                normalizeNIS(p.nis) === normalizedNIS && String(p.tanggal ?? '').trim() === todayStr
+            );
             if (existingPenjemputan) {
                 showToast(`Siswa ${siswa.nama} sudah dijemput hari ini pukul ${existingPenjemputan.waktu}.`, "error");
                 return;
@@ -1203,125 +1206,83 @@
 
             const currentUser = JSON.parse(sessionStorage.getItem('e_user') || '{}');
             const petugasName = currentUser.name || 'Petugas Piket';
-
-            showToast(`Penjemputan berhasil: ${siswa.nama} (${siswa.kelas})`, "success");
+            const jamPenjemputan = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 
             if (window.addPenjemputanFirebase) {
                 await window.addPenjemputanFirebase({
-                    nis: siswa.nis,
-                    nama: siswa.nama,
-                    kelas: siswa.kelas,
-                    noAbsen: parseInt(siswa.noAbsen) || 999,
-                    tanggal: todayStr,
-                    waktu: jamPenjemputan,
-                    statusPenjemputan: 'Sudah Dijemput',
-                    petugasNama: petugasName
+                    nis: normalizedNIS, nama: siswa.nama, kelas: siswa.kelas,
+                    noAbsen: parseInt(siswa.noAbsen) || 999, tanggal: todayStr,
+                    waktu: jamPenjemputan, statusPenjemputan: 'Sudah Dijemput', petugasNama: petugasName
                 });
             }
-
             if (window.addScanLogFirebase) {
-                window.addScanLogFirebase({
-                    nama: siswa.nama,
-                    kelas: siswa.kelas,
-                    waktu: jamPenjemputan + ' WIB',
-                    petugasNama: petugasName
-                });
+                window.addScanLogFirebase({ nama: siswa.nama, kelas: siswa.kelas, waktu: jamPenjemputan + ' WIB', petugasNama: petugasName });
             }
+            showToast(`Penjemputan berhasil: ${siswa.nama} (${siswa.kelas})`, "success");
         }
 
-        // ==========================================
-        // WALI KELAS DASHBOARD RENDERING & SORTING
-        // ==========================================
         function renderWaliDashboard() {
             const currentUser = JSON.parse(sessionStorage.getItem('e_user') || '{}');
             if (currentUser.role !== 'walikelas') return;
 
-            const kelasWali = currentUser.kelas;
+            const kelasWali = currentUser.kelas || '';
             const filterDate = document.getElementById('filterWaliDate')?.value || new Date().toISOString().split('T')[0];
-            
-            const listSiswa = (window.dbSiswa || []).filter(s => s.kelas === kelasWali);
-            const listJemput = (window.dbPenjemputan || []).filter(p => p.tanggal === filterDate && p.kelas === kelasWali);
+            const normalizedKelasWali = normalizeKelas(kelasWali);
+            const semuaSiswa = window.dbSiswa || [];
+            const semuaPenjemputan = window.dbPenjemputan || [];
 
-            document.getElementById('waliTotalSiswa').innerText = listSiswa.length;
-            document.getElementById('waliTotalJemput').innerText = listJemput.length;
-            document.getElementById('waliTotalBelumJemput').innerText = Math.max(0, listSiswa.length - listJemput.length);
+            // Kelas hanya menentukan siswa yang ditampilkan.
+            const listSiswa = semuaSiswa.filter(s => normalizeKelas(s.kelas) === normalizedKelasWali);
 
-            const keyword = (document.getElementById('searchWaliSiswaInput')?.value || '').toLowerCase();
-
-            // Separate students into already picked up and not picked up groups
-            const alreadyPickedUpNisMap = new Map();
-            listJemput.forEach(p => {
-                alreadyPickedUpNisMap.set(p.nis, p);
+            // Status penjemputan hanya berasal dari Firebase, dicocokkan dengan NIS + tanggal.
+            const jemputMap = new Map();
+            semuaPenjemputan.forEach(p => {
+                const nis = normalizeNIS(p.nis);
+                const tanggal = String(p.tanggal ?? '').trim();
+                if (!nis || tanggal !== String(filterDate).trim()) return;
+                const key = `${nis}_${tanggal}`;
+                const existing = jemputMap.get(key);
+                if (!existing || String(p.waktu || '') < String(existing.waktu || '')) jemputMap.set(key, p);
             });
 
-            const pickedUpList = [];
-            const notPickedUpList = [];
-
-            listSiswa.forEach(s => {
-                if (alreadyPickedUpNisMap.has(s.nis)) {
-                    pickedUpList.push({
-                        siswa: s,
-                        record: alreadyPickedUpNisMap.get(s.nis)
-                    });
-                } else {
-                    notPickedUpList.push(s);
-                }
+            const dataSiswa = listSiswa.map(s => {
+                const key = `${normalizeNIS(s.nis)}_${String(filterDate).trim()}`;
+                const record = jemputMap.get(key) || null;
+                return { ...s, jemputRecord: record, isPickedUp: !!record };
             });
 
-            // Sort picked up students strictly by pickup time (earliest first).
-            // Do not use noAbsen for already picked up students.
-            pickedUpList.sort((a, b) => {
-                const timeA = a.record.waktu || '';
-                const timeB = b.record.waktu || '';
-                return timeA.localeCompare(timeB);
+            const sudah = dataSiswa.filter(s => s.isPickedUp).length;
+            const belum = dataSiswa.length - sudah;
+            const elTotal = document.getElementById('waliTotalSiswa');
+            const elJemput = document.getElementById('waliTotalJemput');
+            const elBelum = document.getElementById('waliTotalBelumJemput');
+            if (elTotal) elTotal.innerText = dataSiswa.length;
+            if (elJemput) elJemput.innerText = sudah;
+            if (elBelum) elBelum.innerText = belum;
+
+            const keyword = (document.getElementById('searchWaliSiswaInput')?.value || '').toLowerCase().trim();
+            let list = keyword ? dataSiswa.filter(s => String(s.nama || '').toLowerCase().includes(keyword) || normalizeNIS(s.nis).toLowerCase().includes(keyword)) : dataSiswa;
+
+            list.sort((a,b) => {
+                if (a.isPickedUp && !b.isPickedUp) return -1;
+                if (!a.isPickedUp && b.isPickedUp) return 1;
+                if (a.isPickedUp && b.isPickedUp) return String(a.jemputRecord?.waktu || '').localeCompare(String(b.jemputRecord?.waktu || ''), undefined, {numeric:true});
+                return (parseInt(a.noAbsen)||999) - (parseInt(b.noAbsen)||999);
             });
-
-            // Sort not picked up students by noAbsen
-            notPickedUpList.sort((a, b) => (parseInt(a.noAbsen) || 999) - (parseInt(b.noAbsen) || 999));
-
-            // Combine: Picked up first (ordered by time), followed by not picked up (ordered by noAbsen)
-            let combinedOrderedList = [
-                ...pickedUpList.map(item => ({ ...item.siswa, jemputRecord: item.record, isPickedUp: true })),
-                ...notPickedUpList.map(item => ({ ...item, jemputRecord: null, isPickedUp: false }))
-            ];
-
-            // Apply keyword search filter if present
-            if (keyword) {
-                combinedOrderedList = combinedOrderedList.filter(s => 
-                    s.nama.toLowerCase().includes(keyword) || s.nis.toLowerCase().includes(keyword)
-                );
-            }
 
             const tbody = document.getElementById('tableWaliBody');
             if (!tbody) return;
             tbody.innerHTML = '';
-
-            if (combinedOrderedList.length === 0) {
+            if (!list.length) {
                 tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-slate-400">Belum ada data siswa untuk kelas ${kelasWali}.</td></tr>`;
                 return;
             }
-
-            combinedOrderedList.forEach(s => {
-                let jemputBadge = '<span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-700">Belum Dijemput</span>';
-                let jamJemput = '-';
-                let petugasPiket = '-';
-
-                if (s.isPickedUp && s.jemputRecord) {
-                    jemputBadge = `<span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-700">Sudah Dijemput</span>`;
-                    jamJemput = s.jemputRecord.waktu;
-                    petugasPiket = s.jemputRecord.petugasNama || 'Piket';
-                }
-
+            list.forEach(s => {
+                const r = s.jemputRecord;
+                const badge = r ? '<span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-700">Sudah Dijemput</span>' : '<span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-700">Belum Dijemput</span>';
                 const tr = document.createElement('tr');
                 tr.className = 'hover:bg-slate-50 transition';
-                tr.innerHTML = `
-                    <td class="p-3 font-mono font-bold text-indigo-700">${s.noAbsen || '-'}</td>
-                    <td class="p-3 font-mono text-slate-700">${s.nis}</td>
-                    <td class="p-3 font-semibold text-slate-800">${s.nama}</td>
-                    <td class="p-3">${jemputBadge}</td>
-                    <td class="p-3 font-mono text-xs">${jamJemput}</td>
-                    <td class="p-3 text-xs text-slate-600">${petugasPiket}</td>
-                `;
+                tr.innerHTML = `<td class="p-3 font-mono font-bold text-indigo-700">${s.noAbsen || '-'}</td><td class="p-3 font-mono text-slate-700">${s.nis || '-'}</td><td class="p-3 font-semibold text-slate-800">${s.nama || '-'}</td><td class="p-3">${badge}</td><td class="p-3 font-mono text-xs">${r?.waktu || '-'}</td><td class="p-3 text-xs text-slate-600">${r?.petugasNama || '-'}</td>`;
                 tbody.appendChild(tr);
             });
         }
@@ -1333,18 +1294,18 @@
             const kelasWali = currentUser.kelas;
             const filterDate = document.getElementById('filterWaliDate')?.value || new Date().toISOString().split('T')[0];
             
-            const listSiswa = (window.dbSiswa || []).filter(s => s.kelas === kelasWali);
-            const listJemput = (window.dbPenjemputan || []).filter(p => p.tanggal === filterDate && p.kelas === kelasWali);
+            const listSiswa = (window.dbSiswa || []).filter(s => normalizeKelas(s.kelas) === normalizeKelas(kelasWali));
+            const listJemput = (window.dbPenjemputan || []).filter(p => String(p.tanggal ?? '').trim() === String(filterDate).trim());
 
             const alreadyPickedUpNisMap = new Map();
-            listJemput.forEach(p => alreadyPickedUpNisMap.set(p.nis, p));
+            listJemput.forEach(p => alreadyPickedUpNisMap.set(normalizeNIS(p.nis), p));
 
             const pickedUpList = [];
             const notPickedUpList = [];
 
             listSiswa.forEach(s => {
-                if (alreadyPickedUpNisMap.has(s.nis)) {
-                    pickedUpList.push({ siswa: s, record: alreadyPickedUpNisMap.get(s.nis) });
+                if (alreadyPickedUpNisMap.has(normalizeNIS(s.nis))) {
+                    pickedUpList.push({ siswa: s, record: alreadyPickedUpNisMap.get(normalizeNIS(s.nis)) });
                 } else {
                     notPickedUpList.push(s);
                 }
