@@ -1472,7 +1472,12 @@
                 }
             });
 
-            pickedUpList.sort((a, b) => (a.record.waktu || '').localeCompare(b.record.waktu || ''));
+            // Export wali kelas juga mengikuti urutan terbaru -> teratas.
+            pickedUpList.sort((a, b) => {
+                const waktuA = String(a.record.waktu || '00:00:00').trim();
+                const waktuB = String(b.record.waktu || '00:00:00').trim();
+                return waktuB.localeCompare(waktuA, undefined, {numeric:true});
+            });
             notPickedUpList.sort((a, b) => (parseInt(a.noAbsen) || 999) - (parseInt(b.noAbsen) || 999));
 
             const sortedExportList = [
@@ -1559,9 +1564,14 @@
             tbody.innerHTML = '';
 
             const listPenjemputan = (window.dbPenjemputan || []).filter(p => p.tanggal === filterDate);
+            // Urutan rekap/petugas: siswa yang TERAKHIR dijemput tampil paling atas.
+            // Jika waktu sama, gunakan timestamp agar urutan tetap konsisten.
             listPenjemputan.sort((a, b) => {
-                if (a.kelas !== b.kelas) return a.kelas.localeCompare(b.kelas);
-                return (a.noAbsen || 0) - (b.noAbsen || 0);
+                const waktuA = String(a.waktu || '00:00:00').trim();
+                const waktuB = String(b.waktu || '00:00:00').trim();
+                const byWaktu = waktuB.localeCompare(waktuA, undefined, {numeric:true});
+                if (byWaktu !== 0) return byWaktu;
+                return String(b.timestamp || '').localeCompare(String(a.timestamp || ''));
             });
 
             if (listPenjemputan.length === 0) {
