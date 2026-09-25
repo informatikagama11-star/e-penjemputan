@@ -69,7 +69,7 @@
                     <i class="fa-solid fa-right-to-bracket"></i>
                     <span>Masuk ke Sistem</span>
                 </button>
-                <p class="text-[10px] text-slate-400 text-center">Data akun petugas/wali dibaca dari Cloud Firestore. Data penjemputan berjalan di Realtime Database.</p>
+                <p class="text-[10px] text-slate-400 text-center">Data siswa, akun petugas/wali, pengaturan, penjemputan, dan log tersimpan di Realtime Database.</p>
             </form>
         </div>
     </div>
@@ -672,23 +672,14 @@
     <!-- FIREBASE INITIALIZATION & REALTIME APP ENGINE -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { 
-            getFirestore, 
-            collection, 
-            doc, 
-            setDoc, 
-            addDoc, 
-            deleteDoc, 
-            onSnapshot, 
-            serverTimestamp,
-            getDocs 
-        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import {
             getDatabase,
             ref,
             onValue,
             push,
             set,
+            update,
             remove
         } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
@@ -704,7 +695,6 @@
         };
 
         const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
         const rtdb = getDatabase(app);
 
         let dbSiswa = [];
@@ -717,57 +707,49 @@
             adminPassword: 'admin123'
         };
 
-        window.firebaseDB = db;
         window.firebaseRTDB = rtdb;
+        // Alias agar bagian lama yang memanggil firebaseDB tidak langsung rusak.
+        window.firebaseDB = rtdb;
+
+        function setReady(name, value, error = null) {
+            window[name] = value;
+            window[name.replace('Ready', 'Error')] = error;
+            updateFirebaseDiagnostic();
+        }
 
         function setupRealtimeListeners() {
-            // Siswa - utama dari collection siswa. Jika kosong, gunakan data lama dari Firestore absensi.
-            onSnapshot(collection(db, "siswa"), async (snapshot) => {
-                dbSiswa = [];
-                snapshot.forEach(docSnap => dbSiswa.push({ id: docSnap.id, ...docSnap.data() }));
-                if (dbSiswa.length === 0) {
-                    try {
-                        const oldSnap = await getDocs(collection(db, "absensi"));
-                        const map = new Map();
-                        oldSnap.forEach(docSnap => {
-                            const a = docSnap.data() || {};
-                            const nis = String(a.nis || '').trim();
-                            const nama = String(a.nama || '').trim();
-                            if (!nis || !nama) return;
-                            if (!map.has(nis)) {
-                                map.set(nis, {
-                                    id: 'absensi_' + nis,
-                                    nis, nama,
-                                    kelas: a.kelas || '',
-                                    noAbsen: parseInt(a.noAbsen) || 999,
-                                    waWaliNama: a.waWaliNama || '',
-                                    waWali: a.waWali || ''
-                                });
-                            }
-                        });
-                        dbSiswa = Array.from(map.values());
-                    } catch (e) {
-                        console.error('Gagal membaca data lama Firestore absensi:', e);
-                    }
-                }
-                dbSiswa.sort((a, b) => (parseInt(a.noAbsen) || 999) - (parseInt(b.noAbsen) || 999));
+            // =====================================================
+            // SEMUA MASTER DATA SEKARANG DIBACA DARI REALTIME DB
+            // =====================================================
+
+            // SISWA -> /siswa
+            onValue(ref(rtdb, 'siswa'), (snapshot) => {
+                const data = snapshot.val() || {};
+                dbSiswa = Object.entries(data).map(([id, value]) => ({
+                    id,
+                    ...(value || {})
+                }));
+                dbSiswa.sort((a, b) =>
+                    (parseInt(a.noAbsen) || 999) - (parseInt(b.noAbsen) || 999)
+                );
                 window.dbSiswa = dbSiswa;
                 renderClassCards();
                 renderTableSiswaDetail();
                 renderWaliDashboard();
-                window.firestoreSiswaReady = true;
-                updateFirebaseDiagnostic();
+                setReady('realtimeSiswaReady', true, null);
             }, (error) => {
-                console.error("Firestore siswa error:", error);
-                window.firestoreSiswaReady = false;
-                window.firestoreSiswaError = error;
-                updateFirebaseDiagnostic();
+                console.error('RTDB siswa error:', error);
+                setReady('realtimeSiswaReady', false, error);
+                showToast('Gagal membaca data siswa dari Realtime Database.', 'error');
             });
 
-            // Wali Kelas
-            onSnapshot(collection(db, "walikelas"), (snapshot) => {
-                dbWaliKelas = [];
-                snapshot.forEach(docSnap => dbWaliKelas.push({ id: docSnap.id, ...docSnap.data() }));
+            // WALI KELAS -> /walikelas
+            onValue(ref(rtdb, 'walikelas'), (snapshot) => {
+                const data = snapshot.val() || {};
+                dbWaliKelas = Object.entries(data).map(([id, value]) => ({
+                    id,
+                    ...(value || {})
+                }));
                 dbWaliKelas.sort((a, b) => {
                     const idA = String(a.classId || a.id || '');
                     const idB = String(b.classId || b.id || '');
@@ -777,92 +759,85 @@
                 updateClassDropdown();
                 renderClassCards();
                 renderWaliDashboard();
-                window.firestoreWaliReady = true;
-                updateFirebaseDiagnostic();
+                setReady('realtimeWaliReady', true, null);
             }, (error) => {
-                console.error("Firestore walikelas error:", error);
-                window.firestoreWaliReady = false;
-                window.firestoreWaliError = error;
-                updateFirebaseDiagnostic();
+                console.error('RTDB walikelas error:', error);
+                setReady('realtimeWaliReady', false, error);
+                showToast('Gagal membaca data wali kelas dari Realtime Database.', 'error');
             });
 
-            // Petugas Piket - Firestore MASTER DATA
-            onSnapshot(collection(db, "petugas"), (snapshot) => {
-                dbPetugas = [];
-                snapshot.forEach(docSnap => {
-                    const data = docSnap.data() || {};
-                    dbPetugas.push({ id: docSnap.id, ...data });
-                });
+            // PETUGAS -> /petugas
+            onValue(ref(rtdb, 'petugas'), (snapshot) => {
+                const data = snapshot.val() || {};
+                dbPetugas = Object.entries(data).map(([id, value]) => ({
+                    id,
+                    ...(value || {})
+                }));
                 window.dbPetugas = dbPetugas;
-                window.firestorePetugasReady = true;
-                window.firestorePetugasError = null;
                 renderTablePetugas();
-                updateFirebaseDiagnostic();
+                setReady('realtimePetugasReady', true, null);
             }, (error) => {
-                console.error("Firestore petugas error:", error);
-                window.firestorePetugasReady = false;
-                window.firestorePetugasError = error;
-                updateFirebaseDiagnostic();
-                showToast("Petugas ada di Firestore, tetapi aplikasi tidak bisa membacanya. Cek Firestore Rules.", "error");
+                console.error('RTDB petugas error:', error);
+                setReady('realtimePetugasReady', false, error);
+                showToast('Gagal membaca akun petugas dari Realtime Database.', 'error');
             });
 
-            // PENJEMPUTAN HARIAN -> FIREBASE REALTIME DATABASE
-            // Ini sengaja memakai RTDB agar status petugas dan wali kelas berubah langsung.
-            onValue(ref(rtdb, "penjemputan"), (snapshot) => {
+            // PENJEMPUTAN -> /penjemputan
+            onValue(ref(rtdb, 'penjemputan'), (snapshot) => {
                 const data = snapshot.val() || {};
                 dbPenjemputan = Object.entries(data).map(([id, value]) => ({ id, ...(value || {}) }));
                 window.dbPenjemputan = dbPenjemputan;
                 renderPenjemputanTable();
                 renderWaliDashboard();
             }, (error) => {
-                console.error("RTDB penjemputan error:", error);
-                showToast("Gagal membaca data penjemputan Realtime Database.", "error");
+                console.error('RTDB penjemputan error:', error);
+                showToast('Gagal membaca data penjemputan Realtime Database.', 'error');
             });
 
-            // LOG PENJEMPUTAN -> FIREBASE REALTIME DATABASE
-            onValue(ref(rtdb, "logs"), (snapshot) => {
+            // LOG -> /logs
+            onValue(ref(rtdb, 'logs'), (snapshot) => {
                 const data = snapshot.val() || {};
                 const logs = Object.entries(data).map(([id, value]) => ({ id, ...(value || {}) }));
-                logs.sort((a, b) => String(b.timestamp || "").localeCompare(String(a.timestamp || "")));
+                logs.sort((a, b) => String(b.timestamp || '').localeCompare(String(a.timestamp || '')));
                 renderLogs(logs);
             }, (error) => {
-                console.error("RTDB logs error:", error);
+                console.error('RTDB logs error:', error);
             });
 
-            // Admin Settings
-            onSnapshot(doc(db, "settings", "app_config"), (docSnap) => {
-                if (docSnap.exists()) {
-                    const cfg = docSnap.data();
-                    if (cfg.adminUsername) window.appCredentials.adminUsername = cfg.adminUsername;
-                    if (cfg.adminPassword) window.appCredentials.adminPassword = cfg.adminPassword;
+            // SETTINGS -> /settings/app_config
+            onValue(ref(rtdb, 'settings/app_config'), (snapshot) => {
+                const cfg = snapshot.val() || {};
+                if (cfg.adminUsername) window.appCredentials.adminUsername = cfg.adminUsername;
+                if (cfg.adminPassword) window.appCredentials.adminPassword = cfg.adminPassword;
 
-                    const savedUser = JSON.parse(sessionStorage.getItem('e_user') || '{}');
-                    if (savedUser.role === 'admin') {
-                        const adminUserEl = document.getElementById('adminUsernameInput');
-                        const adminPassEl = document.getElementById('adminPasswordInput');
-                        if (adminUserEl && cfg.adminUsername) adminUserEl.value = cfg.adminUsername;
-                        if (adminPassEl && cfg.adminPassword) adminPassEl.value = cfg.adminPassword;
-                    }
+                const savedUser = JSON.parse(sessionStorage.getItem('e_user') || '{}');
+                if (savedUser.role === 'admin') {
+                    const adminUserEl = document.getElementById('adminUsernameInput');
+                    const adminPassEl = document.getElementById('adminPasswordInput');
+                    if (adminUserEl && cfg.adminUsername) adminUserEl.value = cfg.adminUsername;
+                    if (adminPassEl && cfg.adminPassword) adminPassEl.value = cfg.adminPassword;
                 }
-                window.firestoreSettingsReady = true;
-                updateFirebaseDiagnostic();
+                setReady('realtimeSettingsReady', true, null);
             }, (error) => {
-                console.error("Firestore settings error:", error);
-                window.firestoreSettingsReady = false;
-                window.firestoreSettingsError = error;
-                updateFirebaseDiagnostic();
+                console.error('RTDB settings error:', error);
+                setReady('realtimeSettingsReady', false, error);
             });
         }
 
         function updateFirebaseDiagnostic() {
             const statusEl = document.getElementById('firebaseStatus');
             if (!statusEl) return;
-            const errors = [window.firestorePetugasError, window.firestoreWaliError, window.firestoreSiswaError, window.firestoreSettingsError].filter(Boolean);
+            const errors = [
+                window.realtimePetugasError,
+                window.realtimeWaliError,
+                window.realtimeSiswaError,
+                window.realtimeSettingsError
+            ].filter(Boolean);
             if (errors.length) {
-                statusEl.textContent = 'Firestore bermasalah';
+                statusEl.textContent = 'Realtime DB bermasalah';
                 statusEl.className = 'text-rose-300';
             } else {
-                statusEl.textContent = 'Aktif';
+                statusEl.textContent = 'Realtime Aktif';
                 statusEl.className = 'text-emerald-300';
             }
         }
@@ -898,160 +873,193 @@
             });
         }
 
+        // =====================================================
+        // CRUD SISWA -> REALTIME DATABASE
+        // =====================================================
         window.saveSiswaFirebase = async function(data) {
             try {
-                if (data.id) await setDoc(doc(db, "siswa", data.id), data);
-                else await addDoc(collection(db, "siswa"), data);
-                showToast("Data siswa tersimpan!");
-            } catch(e) { showToast("Gagal menyimpan data", "error"); }
+                const clean = {
+                    noAbsen: Number(data.noAbsen) || 0,
+                    nis: String(data.nis || '').trim(),
+                    nama: String(data.nama || '').trim(),
+                    kelas: String(data.kelas || '').trim(),
+                    waWaliNama: String(data.waWaliNama || '').trim(),
+                    waWali: String(data.waWali || '').trim()
+                };
+                if (!clean.nama || !clean.kelas) {
+                    showToast('Nama siswa dan kelas wajib diisi.', 'error');
+                    return false;
+                }
+                let key = String(data.id || '').trim();
+                if (!key || key.startsWith('absensi_')) key = push(ref(rtdb, 'siswa')).key;
+                await set(ref(rtdb, `siswa/${key}`), clean);
+                showToast('Data siswa tersimpan di Realtime Database!', 'success');
+                return true;
+            } catch(e) {
+                console.error('RTDB save siswa error:', e);
+                showToast('Gagal menyimpan data siswa: ' + (e?.message || 'cek Rules RTDB.'), 'error');
+                return false;
+            }
         };
 
         window.deleteSiswaFirebase = async function(id) {
-            try { await deleteDoc(doc(db, "siswa", id)); showToast("Data siswa dihapus."); }
-            catch(e) { showToast("Gagal menghapus", "error"); }
+            try {
+                if (!id) return;
+                await remove(ref(rtdb, `siswa/${id}`));
+                showToast('Data siswa dihapus dari Realtime Database.');
+            } catch(e) {
+                console.error(e);
+                showToast('Gagal menghapus siswa: ' + (e?.message || 'cek Rules RTDB.'), 'error');
+            }
         };
 
         window.deleteClassStudentsFirebase = async function(targetClass) {
             try {
-                const toDelete = (window.dbSiswa || []).filter(s => s.kelas === targetClass);
-                await Promise.all(toDelete.map(s => deleteDoc(doc(db, "siswa", s.id))));
-                showToast(`Siswa kelas ${targetClass} dihapus.`);
-            } catch(e) { showToast("Gagal menghapus siswa kelas", "error"); }
+                const toDelete = (window.dbSiswa || []).filter(s => String(s.kelas) === String(targetClass));
+                await Promise.all(toDelete.map(s => remove(ref(rtdb, `siswa/${s.id}`))));
+                showToast(`Siswa kelas ${targetClass} dihapus dari Realtime Database.`);
+            } catch(e) {
+                console.error(e);
+                showToast('Gagal menghapus siswa kelas: ' + (e?.message || 'cek Rules RTDB.'), 'error');
+            }
         };
 
+        // =====================================================
+        // CRUD WALI KELAS -> REALTIME DATABASE
+        // =====================================================
         window.saveWalikelasFirebase = async function(data) {
             try {
                 const customId = String(data.classId || '').trim();
                 if (!customId) {
-                    showToast("ID Kelas wajib diisi!", "error");
-                    return;
+                    showToast('ID Kelas wajib diisi!', 'error');
+                    return false;
                 }
-                const classDocRef = doc(db, "walikelas", customId);
-                await setDoc(classDocRef, {
+                await set(ref(rtdb, `walikelas/${customId}`), {
                     classId: customId,
-                    kelas: data.kelas,
-                    nama: data.nama,
-                    wa: data.wa,
+                    kelas: data.kelas || '',
+                    nama: data.nama || '',
+                    wa: data.wa || '',
                     username: data.username || ('wali' + customId.toLowerCase()),
                     password: data.password || '123456'
-                }, { merge: true });
-                showToast("Data kelas & akun wali kelas tersimpan!");
-            } catch(e) { 
+                });
+                showToast('Data kelas & akun wali kelas tersimpan di Realtime Database!', 'success');
+                return true;
+            } catch(e) {
                 console.error(e);
-                showToast("Gagal menyimpan kelas", "error"); 
+                showToast('Gagal menyimpan kelas: ' + (e?.message || 'cek Rules RTDB.'), 'error');
+                return false;
             }
         };
 
         window.deleteWalikelasFirebase = async function(id) {
-            try { 
+            try {
                 if (!id) return;
-                await deleteDoc(doc(db, "walikelas", id)); 
-                showToast("Kelas berhasil dihapus."); 
+                await remove(ref(rtdb, `walikelas/${id}`));
+                showToast('Kelas berhasil dihapus.');
+            } catch(e) {
+                console.error(e);
+                showToast('Gagal menghapus kelas.', 'error');
             }
-            catch(e) { showToast("Gagal menghapus kelas.", "error"); }
         };
 
         window.resetAllClasses = async function() {
-            if (!confirm("Apakah Anda yakin ingin menghapus SELURUH data kelas?")) return;
+            if (!confirm('Apakah Anda yakin ingin menghapus SELURUH data kelas?')) return;
             try {
-                const querySnapshot = await getDocs(collection(db, "walikelas"));
-                const deletePromises = [];
-                querySnapshot.forEach((documentSnap) => {
-                    deletePromises.push(deleteDoc(doc(db, "walikelas", documentSnap.id)));
-                });
-                await Promise.all(deletePromises);
-                showToast("Semua data kelas berhasil dibersihkan!");
+                await remove(ref(rtdb, 'walikelas'));
+                showToast('Semua data kelas berhasil dibersihkan!');
             } catch(err) {
-                showToast("Gagal membersihkan data kelas.", "error");
+                console.error(err);
+                showToast('Gagal membersihkan data kelas.', 'error');
             }
         };
 
+        // =====================================================
+        // CRUD PETUGAS -> REALTIME DATABASE
+        // =====================================================
         window.savePetugasFirebase = async function(data) {
             const customId = String(data.petugasId || '').trim();
             const nama = String(data.nama || '').trim();
             const username = String(data.username || '').trim();
             const password = String(data.password || '').trim();
             if (!customId || !nama || !username || !password) {
-                showToast("ID, nama, username, dan password wajib diisi.", "error");
+                showToast('ID, nama, username, dan password wajib diisi.', 'error');
                 return false;
             }
             try {
                 const existing = (window.dbPetugas || []).find(p => String(p.id) === customId || String(p.petugasId) === customId);
-                const duplicateUser = (window.dbPetugas || []).find(p => String(p.username || '').trim().toLowerCase() === username.toLowerCase() && String(p.id) !== customId && String(p.petugasId) !== customId);
+                const duplicateUser = (window.dbPetugas || []).find(p =>
+                    String(p.username || '').trim().toLowerCase() === username.toLowerCase() &&
+                    String(p.id) !== customId && String(p.petugasId) !== customId
+                );
                 if (duplicateUser) {
-                    showToast(`Username '${username}' sudah dipakai petugas lain.`, "error");
+                    showToast(`Username '${username}' sudah dipakai petugas lain.`, 'error');
                     return false;
                 }
-                const petugasDocRef = doc(db, "petugas", customId);
-                // merge=true menjaga field lama seperti sender/token agar tidak ikut hilang.
-                await setDoc(petugasDocRef, {
+                await set(ref(rtdb, `petugas/${customId}`), {
                     petugasId: customId,
                     nama,
                     username,
                     password
-                }, { merge: true });
-                showToast(existing ? "Data petugas berhasil diperbarui!" : "Data petugas piket tersimpan!", "success");
+                });
+                showToast(existing ? 'Data petugas berhasil diperbarui!' : 'Data petugas piket tersimpan!', 'success');
                 return true;
             } catch(e) {
-                console.error("Firestore save petugas error:", e);
-                const reason = e?.code === 'permission-denied'
-                    ? 'Firestore Rules menolak penulisan ke collection petugas.'
-                    : (e?.message || 'Kesalahan Firebase tidak diketahui.');
-                showToast("Gagal menyimpan petugas: " + reason, "error");
+                console.error('RTDB save petugas error:', e);
+                showToast('Gagal menyimpan petugas: ' + (e?.message || 'cek Rules RTDB.'), 'error');
                 return false;
             }
         };
 
         window.deletePetugasFirebase = async function(id) {
-            try { 
+            try {
                 if (!id) return;
-                await deleteDoc(doc(db, "petugas", id)); 
-                showToast("Petugas berhasil dihapus."); 
+                await remove(ref(rtdb, `petugas/${id}`));
+                showToast('Petugas berhasil dihapus.');
+            } catch(e) {
+                console.error(e);
+                showToast('Gagal menghapus petugas.', 'error');
             }
-            catch(e) { showToast("Gagal menghapus petugas.", "error"); }
         };
 
         window.resetAllPetugas = async function() {
-            if (!confirm("Bersihkan seluruh data petugas?")) return;
+            if (!confirm('Bersihkan seluruh data petugas?')) return;
             try {
-                const querySnapshot = await getDocs(collection(db, "petugas"));
-                const deletePromises = [];
-                querySnapshot.forEach((documentSnap) => {
-                    deletePromises.push(deleteDoc(doc(db, "petugas", documentSnap.id)));
-                });
-                await Promise.all(deletePromises);
-                showToast("Semua data petugas dibersihkan.");
-            } catch(err) { showToast("Gagal membersihkan data.", "error"); }
+                await remove(ref(rtdb, 'petugas'));
+                showToast('Semua data petugas dibersihkan.');
+            } catch(err) {
+                console.error(err);
+                showToast('Gagal membersihkan data.', 'error');
+            }
         };
 
         // =========================================================
-        // PENJEMPUTAN & LOG = FIREBASE REALTIME DATABASE
+        // PENJEMPUTAN & LOG -> REALTIME DATABASE
         // =========================================================
         window.addPenjemputanFirebase = async function(penjemputanData) {
             try {
-                const newRef = push(ref(rtdb, "penjemputan"));
+                const newRef = push(ref(rtdb, 'penjemputan'));
                 await set(newRef, {
                     ...penjemputanData,
                     createdAt: new Date().toISOString()
                 });
                 return newRef.key;
             } catch(e) {
-                console.error("Gagal menyimpan penjemputan ke RTDB:", e);
-                showToast("Gagal menyimpan penjemputan ke Realtime Database.", "error");
+                console.error('Gagal menyimpan penjemputan ke RTDB:', e);
+                showToast('Gagal menyimpan penjemputan ke Realtime Database.', 'error');
                 throw e;
             }
         };
 
         window.addScanLogFirebase = async function(logData) {
             try {
-                const newRef = push(ref(rtdb, "logs"));
+                const newRef = push(ref(rtdb, 'logs'));
                 await set(newRef, {
                     ...logData,
                     timestamp: new Date().toISOString()
                 });
                 return newRef.key;
             } catch(e) {
-                console.error("Gagal menyimpan log ke RTDB:", e);
+                console.error('Gagal menyimpan log ke RTDB:', e);
             }
         };
 
@@ -1059,23 +1067,30 @@
             try {
                 if (!id) return;
                 await remove(ref(rtdb, `penjemputan/${id}`));
-                showToast("Data penjemputan dihapus.");
+                showToast('Data penjemputan dihapus.');
             } catch(e) {
                 console.error(e);
-                showToast("Gagal menghapus data penjemputan.", "error");
+                showToast('Gagal menghapus data penjemputan.', 'error');
             }
         };
 
+        // SETTINGS -> /settings/app_config
         window.saveSettingsFirebase = async function(settingsData) {
             try {
-                await setDoc(doc(db, "settings", "app_config"), { ...settingsData, updatedAt: serverTimestamp() }, { merge: true });
-            } catch(e) {}
+                await update(ref(rtdb, 'settings/app_config'), {
+                    ...settingsData,
+                    updatedAt: new Date().toISOString()
+                });
+            } catch(e) {
+                console.error('RTDB settings error:', e);
+                showToast('Gagal menyimpan pengaturan.', 'error');
+            }
         };
 
-        window.firestorePetugasReady = null;
-        window.firestoreWaliReady = null;
-        window.firestoreSiswaReady = null;
-        window.firestoreSettingsReady = null;
+        window.realtimePetugasReady = null;
+        window.realtimeWaliReady = null;
+        window.realtimeSiswaReady = null;
+        window.realtimeSettingsReady = null;
         setupRealtimeListeners();
     </script>
 
@@ -1119,8 +1134,8 @@
 
             // 2. Check Petugas Piket
             const listPetugas = window.dbPetugas || [];
-            if (window.firestorePetugasReady === false && window.firestorePetugasError) {
-                errorEl.innerText = "Data akun petugas tidak bisa dibaca dari Firestore. Buka Console > Firestore > Rules dan cek izin baca.";
+            if (window.realtimePetugasReady === false && window.realtimePetugasError) {
+                errorEl.innerText = "Data akun petugas tidak bisa dibaca dari Realtime Database. Buka Console > Realtime Database > Rules dan cek izin baca.";
                 errorEl.classList.remove('hidden');
                 return;
             }
