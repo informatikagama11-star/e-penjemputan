@@ -38,15 +38,15 @@
                 <div class="w-16 h-16 bg-indigo-100 text-indigo-700 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-inner">
                     <i class="fa-solid fa-car-side text-3xl"></i>
                 </div>
-                <h2 class="text-2xl font-bold text-slate-800">E-Penjemputan Digital</h2>
-                <p class="text-xs text-slate-500 mt-1">Admin memakai Firebase Authentication • Petugas/Wali memakai akun aplikasi</p>
+                <h2 class="text-2xl font-bold text-slate-800">E-Penjemputan</h2>
+                <p class="text-xs text-slate-500 mt-1">SDIT Gema Insan Mandiri</p>
             </div>
 
             <form onsubmit="handleLogin(event)" class="space-y-4">
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Email Firebase / Username / ID Login</label>
                     <div class="relative">
-                        <input type="text" id="loginUsername" required placeholder="Email Firebase untuk Admin, atau username/ID Petugas/Wali" 
+                        <input type="text" id="loginUsername" required placeholder="Untuk Walikelas di isi sesuai nama Kelasnya" 
                             class="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                         <i class="fa-solid fa-user absolute left-3 top-3 text-slate-400"></i>
                     </div>
@@ -55,7 +55,7 @@
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Password</label>
                     <div class="relative">
-                        <input type="password" id="loginPassword" required placeholder="Masukkan password" 
+                        <input type="password" id="loginPassword" required placeholder="Passwordnya berurutan ya" 
                             class="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                         <i class="fa-solid fa-lock absolute left-3 top-3 text-slate-400"></i>
                     </div>
@@ -1137,10 +1137,47 @@
         window.realtimeSiswaReady = null;
         window.realtimeSettingsReady = null;
 
+        // Firebase Authentication memulihkan sesi login secara asynchronous setelah halaman di-refresh.
+        // onAuthStateChanged menjadi sumber kebenaran untuk sesi Admin.
         onAuthStateChanged(auth, (user) => {
             window.firebaseAdminUser = user || null;
+
             const emailEl = document.getElementById('adminUsernameInput');
             if (emailEl && user?.email) emailEl.value = user.email;
+
+            const loginScreen = document.getElementById('loginScreen');
+            const appContent = document.getElementById('appContent');
+
+            if (user) {
+                // Sesi Firebase Auth masih aktif -> Admin tetap masuk walaupun refresh.
+                const adminUser = {
+                    role: 'admin',
+                    name: 'Master Admin',
+                    uid: user.uid,
+                    email: user.email || ''
+                };
+                sessionStorage.setItem('e_user', JSON.stringify(adminUser));
+                applyUserRole(adminUser);
+            } else {
+                // Tidak ada sesi Admin. Petugas/Wali tetap dapat dipulihkan dari sessionStorage.
+                const savedUserRaw = sessionStorage.getItem('e_user');
+                if (savedUserRaw) {
+                    try {
+                        const savedUser = JSON.parse(savedUserRaw);
+                        if (savedUser.role && savedUser.role !== 'admin') {
+                            applyUserRole(savedUser);
+                            return;
+                        }
+                    } catch (e) {}
+                }
+
+                sessionStorage.removeItem('e_user');
+                if (loginScreen) loginScreen.classList.remove('hidden');
+                if (appContent) {
+                    appContent.classList.add('hidden');
+                    appContent.classList.remove('flex');
+                }
+            }
         });
 
         setupRealtimeListeners();
@@ -1264,20 +1301,16 @@
         }
 
         window.addEventListener('DOMContentLoaded', () => {
-            const savedUserRaw = sessionStorage.getItem('e_user');
-            if (savedUserRaw) {
-                try {
-                    const savedUser = JSON.parse(savedUserRaw);
-                    if (savedUser.role !== 'admin' || window.firebaseAuth?.currentUser) applyUserRole(savedUser);
-                    else sessionStorage.removeItem('e_user');
-                } catch (e) { sessionStorage.removeItem('e_user'); }
-            }
-            const adminEmailEl = document.getElementById('adminUsernameInput');
-            if (adminEmailEl && window.firebaseAuth?.currentUser?.email) adminEmailEl.value = window.firebaseAuth.currentUser.email;
+            // Firebase Auth memulihkan sesi melalui onAuthStateChanged di atas.
             const dateInputJemput = document.getElementById('filterPenjemputanDate');
             if (dateInputJemput) dateInputJemput.value = new Date().toISOString().split('T')[0];
             const dateInputWali = document.getElementById('filterWaliDate');
             if (dateInputWali) dateInputWali.value = new Date().toISOString().split('T')[0];
+
+            const adminEmailEl = document.getElementById('adminUsernameInput');
+            if (adminEmailEl && window.firebaseAuth?.currentUser?.email) {
+                adminEmailEl.value = window.firebaseAuth.currentUser.email;
+            }
         });
 
         // ==========================================
