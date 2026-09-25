@@ -39,14 +39,14 @@
                     <i class="fa-solid fa-car-side text-3xl"></i>
                 </div>
                 <h2 class="text-2xl font-bold text-slate-800">E-Penjemputan</h2>
-                <p class="text-xs text-slate-500 mt-1">SDIT Gema Insan Mandiri</p>
+                <p class="text-xs text-slate-500 mt-1">SDIT GEMA INSAN MANDIRI</p>
             </div>
 
             <form onsubmit="handleLogin(event)" class="space-y-4">
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Email Firebase / Username / ID Login</label>
                     <div class="relative">
-                        <input type="text" id="loginUsername" required placeholder="Untuk Walikelas di isi sesuai nama Kelasnya" 
+                        <input type="text" id="loginUsername" required placeholder="Untuk walikelas disesuikan dengan kelasnya" 
                             class="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                         <i class="fa-solid fa-user absolute left-3 top-3 text-slate-400"></i>
                     </div>
@@ -55,7 +55,7 @@
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Password</label>
                     <div class="relative">
-                        <input type="password" id="loginPassword" required placeholder="Passwordnya berurutan ya" 
+                        <input type="password" id="loginPassword" required placeholder="Pasword berurutan" 
                             class="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                         <i class="fa-solid fa-lock absolute left-3 top-3 text-slate-400"></i>
                     </div>
@@ -196,7 +196,7 @@
                         <div class="flex justify-between items-center mb-3 pb-2 border-b">
                             <h2 class="font-bold text-slate-700 flex items-center space-x-2">
                                 <i class="fa-solid fa-clock-rotate-left text-amber-500"></i>
-                                <span>Log Aktivitas Penjemputan Realtime</span>
+                                <span>Aktivitas Scan Realtime</span>
                             </h2>
                             <span id="logCount" class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-bold">0</span>
                         </div>
@@ -242,6 +242,7 @@
                                     <th class="p-3">Jam Dijemput</th>
                                     <th class="p-3">Status</th>
                                     <th class="p-3">Petugas Piket</th>
+                                    <th class="p-3 text-center admin-only hidden" id="penjemputanActionHeader">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody id="tablePenjemputanBody" class="divide-y divide-slate-100"></tbody>
@@ -677,6 +678,9 @@
             getDatabase,
             ref,
             onValue,
+            onChildAdded,
+            onChildChanged,
+            onChildRemoved,
             get,
             push,
             set,
@@ -721,6 +725,48 @@
             window[name] = value;
             window[name.replace('Ready', 'Error')] = error;
             updateFirebaseDiagnostic();
+        }
+
+        function getLocalDateString(date = new Date()) {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+        function getRecordSortTime(record) {
+            return Number(record?.createdAtMs || record?.timestampMs || 0) || 0;
+        }
+
+        function upsertPenjemputanRecord(id, value) {
+            const record = { id, ...(value || {}) };
+            const idx = dbPenjemputan.findIndex(x => String(x.id) === String(id));
+            if (idx >= 0) dbPenjemputan[idx] = record;
+            else dbPenjemputan.push(record);
+            window.dbPenjemputan = dbPenjemputan;
+            renderPenjemputanTable();
+            renderWaliDashboard();
+        }
+
+        function removePenjemputanRecord(id) {
+            dbPenjemputan = dbPenjemputan.filter(x => String(x.id) !== String(id));
+            window.dbPenjemputan = dbPenjemputan;
+            renderPenjemputanTable();
+            renderWaliDashboard();
+        }
+
+        let dbLogs = [];
+        function upsertLogRecord(id, value) {
+            const record = { id, ...(value || {}) };
+            const idx = dbLogs.findIndex(x => String(x.id) === String(id));
+            if (idx >= 0) dbLogs[idx] = record;
+            else dbLogs.push(record);
+            renderLogs(dbLogs);
+        }
+
+        function removeLogRecord(id) {
+            dbLogs = dbLogs.filter(x => String(x.id) !== String(id));
+            renderLogs(dbLogs);
         }
 
         function setupRealtimeListeners() {
@@ -789,25 +835,36 @@
             });
 
             // PENJEMPUTAN -> /penjemputan
-            onValue(ref(rtdb, 'penjemputan'), (snapshot) => {
-                const data = snapshot.val() || {};
-                dbPenjemputan = Object.entries(data).map(([id, value]) => ({ id, ...(value || {}) }));
-                window.dbPenjemputan = dbPenjemputan;
-                renderPenjemputanTable();
-                renderWaliDashboard();
+            // Memakai child listener agar tambah/ubah/hapus terasa langsung tanpa menunggu
+            // seluruh collection diambil ulang. Ini juga membuat pembatalan jemput langsung
+            // terlihat di perangkat wali kelas.
+            const penjemputanRef = ref(rtdb, 'penjemputan');
+            onChildAdded(penjemputanRef, (snapshot) => {
+                upsertPenjemputanRecord(snapshot.key, snapshot.val());
             }, (error) => {
-                console.error('RTDB penjemputan error:', error);
-                showToast('Gagal membaca data penjemputan Realtime Database.', 'error');
+                console.error('RTDB penjemputan add error:', error);
+                showToast('Gagal memantau penjemputan realtime. Cek Rules RTDB.', 'error');
+            });
+            onChildChanged(penjemputanRef, (snapshot) => {
+                upsertPenjemputanRecord(snapshot.key, snapshot.val());
+            });
+            onChildRemoved(penjemputanRef, (snapshot) => {
+                removePenjemputanRecord(snapshot.key);
             });
 
             // LOG -> /logs
-            onValue(ref(rtdb, 'logs'), (snapshot) => {
-                const data = snapshot.val() || {};
-                const logs = Object.entries(data).map(([id, value]) => ({ id, ...(value || {}) }));
-                logs.sort((a, b) => String(b.timestamp || '').localeCompare(String(a.timestamp || '')));
-                renderLogs(logs);
+            // Child listener membuat log scan langsung muncul di samping scanner.
+            const logsRef = ref(rtdb, 'logs');
+            onChildAdded(logsRef, (snapshot) => {
+                upsertLogRecord(snapshot.key, snapshot.val());
             }, (error) => {
                 console.error('RTDB logs error:', error);
+            });
+            onChildChanged(logsRef, (snapshot) => {
+                upsertLogRecord(snapshot.key, snapshot.val());
+            });
+            onChildRemoved(logsRef, (snapshot) => {
+                removeLogRecord(snapshot.key);
             });
 
             // SETTINGS -> /settings/app_config
@@ -848,10 +905,25 @@
         function renderLogs(logs) {
             const container = document.getElementById('scanLogContainer');
             if (!container) return;
-            container.innerHTML = '';
-            document.getElementById('logCount').innerText = logs.length;
 
-            if (logs.length === 0) {
+            const today = getLocalDateString();
+            const todayLogs = (logs || [])
+                .filter(log => {
+                    if (log.tanggal) return String(log.tanggal) === today;
+                    if (log.timestamp) return getLocalDateString(new Date(log.timestamp)) === today;
+                    return true;
+                })
+                .sort((a, b) => {
+                    const timeDiff = getRecordSortTime(b) - getRecordSortTime(a);
+                    if (timeDiff !== 0) return timeDiff;
+                    return String(b.timestamp || '').localeCompare(String(a.timestamp || ''));
+                });
+
+            container.innerHTML = '';
+            const countEl = document.getElementById('logCount');
+            if (countEl) countEl.innerText = todayLogs.length;
+
+            if (todayLogs.length === 0) {
                 container.innerHTML = `
                     <div id="emptyLog" class="text-center py-8 text-slate-400">
                         <i class="fa-solid fa-car-side text-4xl mb-2 text-slate-300"></i>
@@ -860,16 +932,21 @@
                 return;
             }
 
-            logs.forEach(log => {
+            todayLogs.slice(0, 50).forEach((log, index) => {
+                const canceled = String(log.status || '').toLowerCase() === 'dibatalkan';
                 const logItem = document.createElement('div');
-                logItem.className = 'p-3 border rounded-xl text-xs space-y-1 bg-indigo-50/70 border-indigo-100';
+                logItem.className = canceled
+                    ? 'p-3 border rounded-xl text-xs space-y-1 bg-rose-50 border-rose-200'
+                    : (index === 0
+                        ? 'p-3 border-2 rounded-xl text-xs space-y-1 bg-emerald-50 border-emerald-300 shadow-sm'
+                        : 'p-3 border rounded-xl text-xs space-y-1 bg-indigo-50/70 border-indigo-100');
                 logItem.innerHTML = `
-                    <div class="flex justify-between items-center font-bold text-indigo-900">
-                        <span>${log.nama} <span class="text-slate-500 font-normal">(${log.kelas})</span></span>
-                        <span class="text-[10px] bg-indigo-200 text-indigo-800 px-1.5 py-0.5 rounded">${log.waktu}</span>
+                    <div class="flex justify-between items-center font-bold ${canceled ? 'text-rose-900' : 'text-indigo-900'}">
+                        <span>${canceled ? '<i class="fa-solid fa-ban mr-1"></i>' : '<i class="fa-solid fa-circle-check mr-1"></i>'}${log.nama} <span class="text-slate-500 font-normal">(${log.kelas})</span></span>
+                        <span class="text-[10px] ${canceled ? 'bg-rose-200 text-rose-800' : 'bg-indigo-200 text-indigo-800'} px-1.5 py-0.5 rounded">${log.waktu || '-'}</span>
                     </div>
-                    <div class="text-[11px] text-slate-600 flex items-center justify-between pt-1">
-                        <span><i class="fa-solid fa-car-side text-indigo-600"></i> <strong>Dijemput oleh:</strong> ${log.petugasNama || 'Piket'}</span>
+                    <div class="text-[11px] ${canceled ? 'text-rose-700' : 'text-slate-600'} flex items-center justify-between pt-1">
+                        <span><i class="fa-solid ${canceled ? 'fa-rotate-left' : 'fa-car-side'} mr-1"></i> <strong>${canceled ? 'Penjemputan dibatalkan' : 'Dijemput oleh:'}</strong> ${canceled ? (log.cancelledBy || 'Admin') : (log.petugasNama || 'Piket')}</span>
                     </div>
                 `;
                 container.appendChild(logItem);
@@ -1040,10 +1117,12 @@
         // =========================================================
         window.addPenjemputanFirebase = async function(penjemputanData) {
             try {
+                const now = Date.now();
                 const newRef = push(ref(rtdb, 'penjemputan'));
                 await set(newRef, {
                     ...penjemputanData,
-                    createdAt: new Date().toISOString()
+                    createdAt: new Date(now).toISOString(),
+                    createdAtMs: now
                 });
                 return newRef.key;
             } catch(e) {
@@ -1055,10 +1134,12 @@
 
         window.addScanLogFirebase = async function(logData) {
             try {
+                const now = Date.now();
                 const newRef = push(ref(rtdb, 'logs'));
                 await set(newRef, {
                     ...logData,
-                    timestamp: new Date().toISOString()
+                    timestamp: new Date(now).toISOString(),
+                    timestampMs: now
                 });
                 return newRef.key;
             } catch(e) {
@@ -1068,12 +1149,40 @@
 
         window.deletePenjemputanRTDB = async function(id) {
             try {
+                const currentUser = JSON.parse(sessionStorage.getItem('e_user') || '{}');
+                if (currentUser.role !== 'admin') {
+                    showToast('Hanya Admin yang dapat membatalkan penjemputan.', 'error');
+                    return;
+                }
                 if (!id) return;
+                const record = (window.dbPenjemputan || []).find(p => String(p.id) === String(id));
+                if (!record) return;
+
+                const ok = confirm(`Batalkan penjemputan ${record.nama || 'siswa'}?\n\nStatus akan kembali menjadi BELUM DIJEMPUT pada wali kelas.`);
+                if (!ok) return;
+
                 await remove(ref(rtdb, `penjemputan/${id}`));
-                showToast('Data penjemputan dihapus.');
+
+                // Tandai log sebagai dibatalkan agar monitor tetap menunjukkan perubahan,
+                // tetapi rekap penjemputan tidak lagi menghitung siswa tersebut.
+                const logsSnap = await get(ref(rtdb, 'logs'));
+                const logsData = logsSnap.val() || {};
+                const logUpdates = {};
+                Object.entries(logsData).forEach(([logId, log]) => {
+                    if (log && (String(log.penjemputanId || '') === String(id) ||
+                        (normalizeNIS(log.nis) === normalizeNIS(record.nis) && String(log.tanggal || '') === String(record.tanggal || '') && String(log.waktu || '').startsWith(String(record.waktu || ''))))) {
+                        logUpdates[`logs/${logId}/status`] = 'Dibatalkan';
+                        logUpdates[`logs/${logId}/cancelledBy`] = currentUser.name || 'Admin';
+                        logUpdates[`logs/${logId}/cancelledAt`] = new Date().toISOString();
+                        logUpdates[`logs/${logId}/cancelledAtMs`] = Date.now();
+                    }
+                });
+                if (Object.keys(logUpdates).length) await update(ref(rtdb), logUpdates);
+
+                showToast(`Penjemputan ${record.nama || ''} dibatalkan. Wali kelas akan otomatis kembali menjadi Belum Dijemput.`, 'success');
             } catch(e) {
                 console.error(e);
-                showToast('Gagal menghapus data penjemputan.', 'error');
+                showToast('Gagal membatalkan data penjemputan.', 'error');
             }
         };
 
@@ -1137,47 +1246,10 @@
         window.realtimeSiswaReady = null;
         window.realtimeSettingsReady = null;
 
-        // Firebase Authentication memulihkan sesi login secara asynchronous setelah halaman di-refresh.
-        // onAuthStateChanged menjadi sumber kebenaran untuk sesi Admin.
         onAuthStateChanged(auth, (user) => {
             window.firebaseAdminUser = user || null;
-
             const emailEl = document.getElementById('adminUsernameInput');
             if (emailEl && user?.email) emailEl.value = user.email;
-
-            const loginScreen = document.getElementById('loginScreen');
-            const appContent = document.getElementById('appContent');
-
-            if (user) {
-                // Sesi Firebase Auth masih aktif -> Admin tetap masuk walaupun refresh.
-                const adminUser = {
-                    role: 'admin',
-                    name: 'Master Admin',
-                    uid: user.uid,
-                    email: user.email || ''
-                };
-                sessionStorage.setItem('e_user', JSON.stringify(adminUser));
-                applyUserRole(adminUser);
-            } else {
-                // Tidak ada sesi Admin. Petugas/Wali tetap dapat dipulihkan dari sessionStorage.
-                const savedUserRaw = sessionStorage.getItem('e_user');
-                if (savedUserRaw) {
-                    try {
-                        const savedUser = JSON.parse(savedUserRaw);
-                        if (savedUser.role && savedUser.role !== 'admin') {
-                            applyUserRole(savedUser);
-                            return;
-                        }
-                    } catch (e) {}
-                }
-
-                sessionStorage.removeItem('e_user');
-                if (loginScreen) loginScreen.classList.remove('hidden');
-                if (appContent) {
-                    appContent.classList.add('hidden');
-                    appContent.classList.remove('flex');
-                }
-            }
         });
 
         setupRealtimeListeners();
@@ -1301,16 +1373,22 @@
         }
 
         window.addEventListener('DOMContentLoaded', () => {
-            // Firebase Auth memulihkan sesi melalui onAuthStateChanged di atas.
-            const dateInputJemput = document.getElementById('filterPenjemputanDate');
-            if (dateInputJemput) dateInputJemput.value = new Date().toISOString().split('T')[0];
-            const dateInputWali = document.getElementById('filterWaliDate');
-            if (dateInputWali) dateInputWali.value = new Date().toISOString().split('T')[0];
-
-            const adminEmailEl = document.getElementById('adminUsernameInput');
-            if (adminEmailEl && window.firebaseAuth?.currentUser?.email) {
-                adminEmailEl.value = window.firebaseAuth.currentUser.email;
+            const savedUserRaw = sessionStorage.getItem('e_user');
+            if (savedUserRaw) {
+                try {
+                    const savedUser = JSON.parse(savedUserRaw);
+                    if (savedUser.role !== 'admin' || window.firebaseAuth?.currentUser) applyUserRole(savedUser);
+                    else sessionStorage.removeItem('e_user');
+                } catch (e) { sessionStorage.removeItem('e_user'); }
             }
+            const adminEmailEl = document.getElementById('adminUsernameInput');
+            if (adminEmailEl && window.firebaseAuth?.currentUser?.email) adminEmailEl.value = window.firebaseAuth.currentUser.email;
+            const dateInputJemput = document.getElementById('filterPenjemputanDate');
+            const nowLocal = new Date();
+            const localDate = `${nowLocal.getFullYear()}-${String(nowLocal.getMonth()+1).padStart(2,'0')}-${String(nowLocal.getDate()).padStart(2,'0')}`;
+            if (dateInputJemput) dateInputJemput.value = localDate;
+            const dateInputWali = document.getElementById('filterWaliDate');
+            if (dateInputWali) dateInputWali.value = localDate;
         });
 
         // ==========================================
@@ -1444,7 +1522,8 @@
             const siswa = (window.dbSiswa || []).find(s => normalizeNIS(s.nis) === normalizedNIS);
             if (!siswa) { showToast(`Siswa tidak ditemukan!`, "error"); return; }
 
-            const todayStr = new Date().toISOString().split('T')[0];
+            const now = new Date();
+            const todayStr = getLocalDateString(now);
             const existingPenjemputan = (window.dbPenjemputan || []).find(p =>
                 normalizeNIS(p.nis) === normalizedNIS && String(p.tanggal ?? '').trim() === todayStr
             );
@@ -1455,19 +1534,25 @@
 
             const currentUser = JSON.parse(sessionStorage.getItem('e_user') || '{}');
             const petugasName = currentUser.name || 'Petugas Piket';
-            const jamPenjemputan = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+            const jamPenjemputan = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 
+            let penjemputanId = null;
             if (window.addPenjemputanFirebase) {
-                await window.addPenjemputanFirebase({
+                penjemputanId = await window.addPenjemputanFirebase({
                     nis: normalizedNIS, nama: siswa.nama, kelas: siswa.kelas,
                     noAbsen: parseInt(siswa.noAbsen) || 999, tanggal: todayStr,
                     waktu: jamPenjemputan, statusPenjemputan: 'Sudah Dijemput', petugasNama: petugasName
                 });
             }
             if (window.addScanLogFirebase) {
-                window.addScanLogFirebase({ nama: siswa.nama, kelas: siswa.kelas, waktu: jamPenjemputan + ' WIB', petugasNama: petugasName });
+                await window.addScanLogFirebase({
+                    nis: normalizedNIS, nama: siswa.nama, kelas: siswa.kelas, tanggal: todayStr,
+                    waktu: jamPenjemputan + ' WIB', petugasNama: petugasName, penjemputanId
+                });
             }
-            showToast(`Penjemputan berhasil: ${siswa.nama} (${siswa.kelas})`, "success");
+            // Optimistic feedback: monitor scanner langsung menunjukkan hasil scan,
+            // sementara listener RTDB tetap menjadi sumber kebenaran untuk perangkat lain.
+            showToast(`✓ ${siswa.nama} (${siswa.kelas}) berhasil dijemput pukul ${jamPenjemputan}.`, "success");
         }
 
         function renderWaliDashboard() {
@@ -1491,7 +1576,9 @@
                 if (!nis || tanggal !== String(filterDate).trim()) return;
                 const key = `${nis}_${tanggal}`;
                 const existing = jemputMap.get(key);
-                if (!existing || String(p.waktu || '') < String(existing.waktu || '')) jemputMap.set(key, p);
+                if (!existing || getRecordSortTime(p) > getRecordSortTime(existing) || (getRecordSortTime(p) === getRecordSortTime(existing) && String(p.waktu || '') > String(existing.waktu || ''))) {
+                    jemputMap.set(key, p);
+                }
             });
 
             const dataSiswa = listSiswa.map(s => {
@@ -1520,9 +1607,11 @@
                 if (a.isPickedUp && !b.isPickedUp) return -1;
                 if (!a.isPickedUp && b.isPickedUp) return 1;
                 if (a.isPickedUp && b.isPickedUp) {
+                    const timeA = getRecordSortTime(a.jemputRecord);
+                    const timeB = getRecordSortTime(b.jemputRecord);
+                    if (timeA !== timeB) return timeB - timeA;
                     const waktuA = String(a.jemputRecord?.waktu || '00:00:00').trim();
                     const waktuB = String(b.jemputRecord?.waktu || '00:00:00').trim();
-                    // Terbaru/terakhir dijemput = waktu terbesar, sehingga diletakkan paling atas.
                     return waktuB.localeCompare(waktuA, undefined, {numeric:true});
                 }
                 return (parseInt(a.noAbsen)||999) - (parseInt(b.noAbsen)||999);
@@ -1657,6 +1746,9 @@
         function renderPenjemputanTable() {
             const tbody = document.getElementById('tablePenjemputanBody');
             if (!tbody) return;
+            const currentUser = JSON.parse(sessionStorage.getItem('e_user') || '{}');
+            const actionHeader = document.getElementById('penjemputanActionHeader');
+            if (actionHeader) actionHeader.classList.toggle('hidden', currentUser.role !== 'admin');
             const filterDate = document.getElementById('filterPenjemputanDate')?.value || new Date().toISOString().split('T')[0];
             tbody.innerHTML = '';
 
@@ -1672,7 +1764,7 @@
             });
 
             if (listPenjemputan.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-slate-400">Belum ada data penjemputan pada tanggal ${filterDate}.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center py-8 text-slate-400">Belum ada data penjemputan pada tanggal ${filterDate}.</td></tr>`;
                 return;
             }
 
@@ -1687,6 +1779,11 @@
                     <td class="p-3 font-mono text-xs">${item.waktu}</td>
                     <td class="p-3"><span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-700">${item.statusPenjemputan || 'Sudah Dijemput'}</span></td>
                     <td class="p-3 text-slate-500 text-xs">${item.petugasNama || 'Piket'}</td>
+                    <td class="p-3 text-center admin-only ${JSON.parse(sessionStorage.getItem('e_user') || '{}').role === 'admin' ? '' : 'hidden'}">
+                        <button onclick="deletePenjemputanRTDB('${item.id}')" class="bg-rose-100 hover:bg-rose-200 text-rose-700 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition" title="Batalkan penjemputan">
+                            <i class="fa-solid fa-rotate-left mr-1"></i>Batal
+                        </button>
+                    </td>
                 `;
                 tbody.appendChild(tr);
             });
