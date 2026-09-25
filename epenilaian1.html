@@ -804,7 +804,12 @@
             onValue(ref(rtdb, 'logs'), (snapshot) => {
                 const data = snapshot.val() || {};
                 const logs = Object.entries(data).map(([id, value]) => ({ id, ...(value || {}) }));
-                logs.sort((a, b) => String(b.timestamp || '').localeCompare(String(a.timestamp || '')));
+                logs.sort((a, b) => {
+                    const timeA = Number(a.scanAtMs) || Date.parse(a.timestamp || a.createdAt || '') || 0;
+                    const timeB = Number(b.scanAtMs) || Date.parse(b.timestamp || b.createdAt || '') || 0;
+                    if (timeB !== timeA) return timeB - timeA;
+                    return String(b.idJemput || b.id || '').localeCompare(String(a.idJemput || a.id || ''));
+                });
                 renderLogs(logs);
             }, (error) => {
                 console.error('RTDB logs error:', error);
@@ -1038,12 +1043,23 @@
         // =========================================================
         // PENJEMPUTAN & LOG -> REALTIME DATABASE
         // =========================================================
+        // Timestamp penjemputan dibuat SEKALI untuk satu kejadian scan.
+        // Semua tampilan (Log, Rekap, Wali Kelas) memakai waktu dan idJemput yang sama.
         window.addPenjemputanFirebase = async function(penjemputanData) {
             try {
                 const newRef = push(ref(rtdb, 'penjemputan'));
+                const scanAtMs = Number(penjemputanData.scanAtMs) || Date.now();
+                const timestamp = penjemputanData.timestamp || new Date(scanAtMs).toISOString();
+                const waktu = penjemputanData.waktu || new Date(scanAtMs).toLocaleTimeString('id-ID', {
+                    hour: '2-digit', minute: '2-digit', second: '2-digit'
+                });
                 await set(newRef, {
                     ...penjemputanData,
-                    createdAt: new Date().toISOString()
+                    idJemput: newRef.key,
+                    scanAtMs,
+                    timestamp,
+                    createdAt: timestamp,
+                    waktu
                 });
                 return newRef.key;
             } catch(e) {
@@ -1056,9 +1072,12 @@
         window.addScanLogFirebase = async function(logData) {
             try {
                 const newRef = push(ref(rtdb, 'logs'));
+                const scanAtMs = Number(logData.scanAtMs) || Date.now();
                 await set(newRef, {
                     ...logData,
-                    timestamp: new Date().toISOString()
+                    idJemput: logData.idJemput || newRef.key,
+                    scanAtMs,
+                    timestamp: logData.timestamp || new Date(scanAtMs).toISOString()
                 });
                 return newRef.key;
             } catch(e) {
@@ -1455,17 +1474,32 @@
 
             const currentUser = JSON.parse(sessionStorage.getItem('e_user') || '{}');
             const petugasName = currentUser.name || 'Petugas Piket';
-            const jamPenjemputan = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+            const scanAtMs = Date.now();
+            const scanDate = new Date(scanAtMs);
+            const timestamp = scanDate.toISOString();
+            const jamPenjemputan = scanDate.toLocaleTimeString('id-ID', {
+                hour: '2-digit', minute: '2-digit', second: '2-digit'
+            });
 
+            let idJemput = '';
             if (window.addPenjemputanFirebase) {
-                await window.addPenjemputanFirebase({
+                idJemput = await window.addPenjemputanFirebase({
                     nis: normalizedNIS, nama: siswa.nama, kelas: siswa.kelas,
                     noAbsen: parseInt(siswa.noAbsen) || 999, tanggal: todayStr,
-                    waktu: jamPenjemputan, statusPenjemputan: 'Sudah Dijemput', petugasNama: petugasName
+                    waktu: jamPenjemputan, statusPenjemputan: 'Sudah Dijemput', petugasNama: petugasName,
+                    scanAtMs, timestamp
                 });
             }
             if (window.addScanLogFirebase) {
-                window.addScanLogFirebase({ nama: siswa.nama, kelas: siswa.kelas, waktu: jamPenjemputan + ' WIB', petugasNama: petugasName });
+                await window.addScanLogFirebase({
+                    idJemput,
+                    nama: siswa.nama,
+                    kelas: siswa.kelas,
+                    waktu: jamPenjemputan + ' WIB',
+                    petugasNama: petugasName,
+                    scanAtMs,
+                    timestamp
+                });
             }
             showToast(`Penjemputan berhasil: ${siswa.nama} (${siswa.kelas})`, "success");
         }
@@ -1491,7 +1525,11 @@
                 if (!nis || tanggal !== String(filterDate).trim()) return;
                 const key = `${nis}_${tanggal}`;
                 const existing = jemputMap.get(key);
-                if (!existing || String(p.waktu || '') < String(existing.waktu || '')) jemputMap.set(key, p);
+                const pTime = Number(p.scanAtMs) || Date.parse(p.timestamp || p.createdAt || '') || 0;
+                const eTime = existing ? (Number(existing.scanAtMs) || Date.parse(existing.timestamp || existing.createdAt || '') || 0) : -1;
+                if (!existing || pTime > eTime || (pTime === eTime && String(p.idJemput || '').localeCompare(String(existing.idJemput || '')) > 0)) {
+                    jemputMap.set(key, p);
+                }
             });
 
             const dataSiswa = listSiswa.map(s => {
@@ -1520,10 +1558,10 @@
                 if (a.isPickedUp && !b.isPickedUp) return -1;
                 if (!a.isPickedUp && b.isPickedUp) return 1;
                 if (a.isPickedUp && b.isPickedUp) {
-                    const waktuA = String(a.jemputRecord?.waktu || '00:00:00').trim();
-                    const waktuB = String(b.jemputRecord?.waktu || '00:00:00').trim();
-                    // Terbaru/terakhir dijemput = waktu terbesar, sehingga diletakkan paling atas.
-                    return waktuB.localeCompare(waktuA, undefined, {numeric:true});
+                    const timeA = Number(a.jemputRecord?.scanAtMs) || Date.parse(a.jemputRecord?.timestamp || a.jemputRecord?.createdAt || '') || 0;
+                    const timeB = Number(b.jemputRecord?.scanAtMs) || Date.parse(b.jemputRecord?.timestamp || b.jemputRecord?.createdAt || '') || 0;
+                    if (timeB !== timeA) return timeB - timeA;
+                    return String(b.jemputRecord?.idJemput || '').localeCompare(String(a.jemputRecord?.idJemput || ''));
                 }
                 return (parseInt(a.noAbsen)||999) - (parseInt(b.noAbsen)||999);
             });
@@ -1571,9 +1609,10 @@
 
             // Export wali kelas juga mengikuti urutan terbaru -> teratas.
             pickedUpList.sort((a, b) => {
-                const waktuA = String(a.record.waktu || '00:00:00').trim();
-                const waktuB = String(b.record.waktu || '00:00:00').trim();
-                return waktuB.localeCompare(waktuA, undefined, {numeric:true});
+                const timeA = Number(a.record.scanAtMs) || Date.parse(a.record.timestamp || a.record.createdAt || '') || 0;
+                const timeB = Number(b.record.scanAtMs) || Date.parse(b.record.timestamp || b.record.createdAt || '') || 0;
+                if (timeB !== timeA) return timeB - timeA;
+                return String(b.record.idJemput || '').localeCompare(String(a.record.idJemput || ''));
             });
             notPickedUpList.sort((a, b) => (parseInt(a.noAbsen) || 999) - (parseInt(b.noAbsen) || 999));
 
@@ -1661,14 +1700,12 @@
             tbody.innerHTML = '';
 
             const listPenjemputan = (window.dbPenjemputan || []).filter(p => p.tanggal === filterDate);
-            // Urutan rekap/petugas: siswa yang TERAKHIR dijemput tampil paling atas.
-            // Jika waktu sama, gunakan timestamp agar urutan tetap konsisten.
+            // Terakhir dijemput = paling atas. Prioritas: scanAtMs/timestamp, lalu idJemput.
             listPenjemputan.sort((a, b) => {
-                const waktuA = String(a.waktu || '00:00:00').trim();
-                const waktuB = String(b.waktu || '00:00:00').trim();
-                const byWaktu = waktuB.localeCompare(waktuA, undefined, {numeric:true});
-                if (byWaktu !== 0) return byWaktu;
-                return String(b.timestamp || '').localeCompare(String(a.timestamp || ''));
+                const timeA = Number(a.scanAtMs) || Date.parse(a.timestamp || a.createdAt || '') || 0;
+                const timeB = Number(b.scanAtMs) || Date.parse(b.timestamp || b.createdAt || '') || 0;
+                if (timeB !== timeA) return timeB - timeA;
+                return String(b.idJemput || b.id || '').localeCompare(String(a.idJemput || a.id || ''));
             });
 
             if (listPenjemputan.length === 0) {
