@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Penjemputan Digital - Realtime</title>
+    <title>Sistem Penjemputan Digital - Firestore Recovery</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome Icons -->
@@ -38,15 +38,15 @@
                 <div class="w-16 h-16 bg-indigo-100 text-indigo-700 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-inner">
                     <i class="fa-solid fa-car-side text-3xl"></i>
                 </div>
-                <h2 class="text-2xl font-bold text-slate-800">E-Penjemputan Digital</h2>
-                <p class="text-xs text-slate-500 mt-1">Admin memakai Firebase Authentication • Petugas/Wali memakai akun aplikasi</p>
+                <h2 class="text-2xl font-bold text-slate-800">E-Penjemputan</h2>
+                <p class="text-xs text-slate-500 mt-1">SDIT Gema Insan Mandiri</p>
             </div>
 
             <form onsubmit="handleLogin(event)" class="space-y-4">
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Email Firebase / Username / ID Login</label>
                     <div class="relative">
-                        <input type="text" id="loginUsername" required placeholder="Email Firebase untuk Admin, atau username/ID Petugas/Wali" 
+                        <input type="text" id="loginUsername" required placeholder="Untuk Walikelas di isi sesuai nama Kelasnya" 
                             class="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                         <i class="fa-solid fa-user absolute left-3 top-3 text-slate-400"></i>
                     </div>
@@ -55,7 +55,7 @@
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Password</label>
                     <div class="relative">
-                        <input type="password" id="loginPassword" required placeholder="Masukkan password" 
+                        <input type="password" id="loginPassword" required placeholder="Passwordnya berurutan ya" 
                             class="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                         <i class="fa-solid fa-lock absolute left-3 top-3 text-slate-400"></i>
                     </div>
@@ -69,7 +69,7 @@
                     <i class="fa-solid fa-right-to-bracket"></i>
                     <span>Masuk ke Sistem</span>
                 </button>
-                <p class="text-[10px] text-slate-400 text-center">Data siswa, akun petugas/wali, pengaturan, penjemputan, dan log tersimpan di Realtime Database. Login Admin menggunakan Firebase Authentication.</p>
+                <p class="text-[10px] text-slate-400 text-center">Gama School</p>
             </form>
         </div>
     </div>
@@ -141,20 +141,6 @@
                 <span id="toastMessage" class="text-sm"></span>
             </div>
 
-            <!-- HASIL SCAN UTAMA: selalu tampil di atas area barcode -->
-            <div id="scanResultPanel" class="hidden mb-4 rounded-2xl border-2 p-4 shadow-sm bg-white">
-                <div class="flex items-start gap-3">
-                    <div id="scanResultIconWrap" class="w-11 h-11 rounded-xl flex items-center justify-center shrink-0">
-                        <i id="scanResultIcon" class="fa-solid text-xl"></i>
-                    </div>
-                    <div class="min-w-0 flex-1">
-                        <div id="scanResultTitle" class="font-extrabold text-base"></div>
-                        <div id="scanResultMessage" class="text-sm mt-1"></div>
-                        <div id="scanResultDetail" class="text-xs mt-2 font-medium"></div>
-                    </div>
-                </div>
-            </div>
-
             <!-- SECTION: SCANNER PENJEMPUTAN (Piket/Admin) -->
             <section id="view-scanner" class="space-y-4">
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -210,7 +196,7 @@
                         <div class="flex justify-between items-center mb-3 pb-2 border-b">
                             <h2 class="font-bold text-slate-700 flex items-center space-x-2">
                                 <i class="fa-solid fa-clock-rotate-left text-amber-500"></i>
-                                <span>Aktivitas Scan Realtime</span>
+                                <span>Log Aktivitas Penjemputan Realtime</span>
                             </h2>
                             <span id="logCount" class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-bold">0</span>
                         </div>
@@ -256,7 +242,6 @@
                                     <th class="p-3">Jam Dijemput</th>
                                     <th class="p-3">Status</th>
                                     <th class="p-3">Petugas Piket</th>
-                                    <th class="p-3 text-center admin-only hidden" id="penjemputanActionHeader">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody id="tablePenjemputanBody" class="divide-y divide-slate-100"></tbody>
@@ -692,16 +677,10 @@
             getDatabase,
             ref,
             onValue,
-            onChildAdded,
-            onChildChanged,
-            onChildRemoved,
             get,
             push,
             set,
             update,
-            query,
-            orderByChild,
-            equalTo,
             remove
         } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
@@ -730,32 +709,6 @@
         // Password admin tidak disimpan di Realtime Database.
         window.appCredentials = { adminEmail: '' };
 
-        // Firebase Auth dipulihkan secara asynchronous saat halaman di-refresh.
-        // Jangan pernah menghapus session sebelum onAuthStateChanged selesai.
-        let authStateResolved = false;
-        let authStateWaiters = [];
-        function waitForAuthState() {
-            if (authStateResolved) return Promise.resolve();
-            return new Promise(resolve => authStateWaiters.push(resolve));
-        }
-        function resolveAuthState() {
-            authStateResolved = true;
-            authStateWaiters.splice(0).forEach(resolve => resolve());
-        }
-
-        // Status master data dipakai agar login petugas/wali tidak terasa ngelag.
-        let masterDataResolved = false;
-        let masterDataWaiters = [];
-        function waitForMasterData() {
-            if (masterDataResolved) return Promise.resolve();
-            return new Promise(resolve => masterDataWaiters.push(resolve));
-        }
-        function resolveMasterData() {
-            if (masterDataResolved) return;
-            masterDataResolved = true;
-            masterDataWaiters.splice(0).forEach(resolve => resolve());
-        }
-
         window.firebaseRTDB = rtdb;
         window.firebaseAuth = auth;
         window.firebaseFirestore = firestore;
@@ -770,120 +723,26 @@
             updateFirebaseDiagnostic();
         }
 
-        function getLocalDateString(date = new Date()) {
-            const y = date.getFullYear();
-            const m = String(date.getMonth() + 1).padStart(2, '0');
-            const d = String(date.getDate()).padStart(2, '0');
-            return `${y}-${m}-${d}`;
-        }
-
-        function getRecordSortTime(record) {
-            return Number(record?.createdAtMs || record?.timestampMs || 0) || 0;
-        }
-
-        function upsertPenjemputanRecord(id, value) {
-            const record = { id, ...(value || {}) };
-            const idx = dbPenjemputan.findIndex(x => String(x.id) === String(id));
-            if (idx >= 0) dbPenjemputan[idx] = record;
-            else dbPenjemputan.push(record);
-            window.dbPenjemputan = dbPenjemputan;
-            renderPenjemputanTable();
-            renderWaliDashboard();
-        }
-
-        function removePenjemputanRecord(id) {
-            dbPenjemputan = dbPenjemputan.filter(x => String(x.id) !== String(id));
-            window.dbPenjemputan = dbPenjemputan;
-            renderPenjemputanTable();
-            renderWaliDashboard();
-        }
-
-        let dbLogs = [];
-        function upsertLogRecord(id, value) {
-            const record = { id, ...(value || {}) };
-            const idx = dbLogs.findIndex(x => String(x.id) === String(id));
-            if (idx >= 0) dbLogs[idx] = record;
-            else dbLogs.push(record);
-            renderLogs(dbLogs);
-        }
-
-        function removeLogRecord(id) {
-            dbLogs = dbLogs.filter(x => String(x.id) !== String(id));
-            renderLogs(dbLogs);
-        }
-
-        // =====================================================
-        // REALTIME ENGINE RINGAN
-        // =====================================================
-        // Prinsip baru:
-        // 1) Master data tetap listener biasa (jumlahnya kecil).
-        // 2) Penjemputan/log TIDAK lagi memakai onValue() seluruh node setiap scan.
-        // 3) Data hari ini memakai query + child listener sehingga hanya perubahan
-        //    yang masuk yang diproses.
-        // 4) Rekap tanggal lama diambil hanya ketika tanggal tersebut dipilih.
-        let realtimeTodayPickupQuery = null;
-        let realtimeTodayLogQuery = null;
-        let loadedPickupDates = new Set();
-        let loadedLogDates = new Set();
-
-        function mergePickupRecord(id, value) {
-            const record = { id, ...(value || {}) };
-            const idx = dbPenjemputan.findIndex(x => String(x.id) === String(id));
-            if (idx >= 0) dbPenjemputan[idx] = record;
-            else dbPenjemputan.push(record);
-            dbPenjemputan.sort((a,b) => getRecordSortTime(b) - getRecordSortTime(a));
-            window.dbPenjemputan = dbPenjemputan;
-            renderPenjemputanTable();
-            renderWaliDashboard();
-        }
-
-        function mergeLogRecord(id, value) {
-            const record = { id, ...(value || {}) };
-            const idx = dbLogs.findIndex(x => String(x.id) === String(id));
-            if (idx >= 0) dbLogs[idx] = record;
-            else dbLogs.push(record);
-            dbLogs.sort((a,b) => Number(b.timestampMs || 0) - Number(a.timestampMs || 0));
-            renderLogs(dbLogs);
-        }
-
-        async function loadPickupDate(dateStr) {
-            const date = String(dateStr || '').trim();
-            if (!date || loadedPickupDates.has(date)) return;
-            try {
-                const snap = await get(query(ref(rtdb, 'penjemputan'), orderByChild('tanggal'), equalTo(date)));
-                const data = snap.val() || {};
-                loadedPickupDates.add(date);
-                Object.entries(data).forEach(([id, value]) => mergePickupRecord(id, value));
-            } catch (e) {
-                console.warn('Gagal memuat rekap penjemputan tanggal', date, e);
-            }
-        }
-
-        async function loadLogDate(dateStr) {
-            const date = String(dateStr || '').trim();
-            if (!date || loadedLogDates.has(date)) return;
-            try {
-                const snap = await get(query(ref(rtdb, 'logs'), orderByChild('tanggal'), equalTo(date)));
-                const data = snap.val() || {};
-                Object.entries(data).forEach(([id, value]) => mergeLogRecord(id, value));
-                loadedLogDates.add(date);
-            } catch (e) {
-                console.warn('Gagal memuat log tanggal', date, e);
-            }
-        }
-
         function setupRealtimeListeners() {
+            // =====================================================
+            // SEMUA MASTER DATA SEKARANG DIBACA DARI REALTIME DB
+            // =====================================================
+
             // SISWA -> /siswa
             onValue(ref(rtdb, 'siswa'), (snapshot) => {
                 const data = snapshot.val() || {};
-                dbSiswa = Object.entries(data).map(([id, value]) => ({ id, ...(value || {}) }));
-                dbSiswa.sort((a,b) => (parseInt(a.noAbsen)||999) - (parseInt(b.noAbsen)||999));
+                dbSiswa = Object.entries(data).map(([id, value]) => ({
+                    id,
+                    ...(value || {})
+                }));
+                dbSiswa.sort((a, b) =>
+                    (parseInt(a.noAbsen) || 999) - (parseInt(b.noAbsen) || 999)
+                );
                 window.dbSiswa = dbSiswa;
                 renderClassCards();
                 renderTableSiswaDetail();
                 renderWaliDashboard();
                 setReady('realtimeSiswaReady', true, null);
-                if (window.realtimeWaliReady === true && window.realtimePetugasReady === true) resolveMasterData();
             }, (error) => {
                 console.error('RTDB siswa error:', error);
                 setReady('realtimeSiswaReady', false, error);
@@ -893,14 +752,20 @@
             // WALI KELAS -> /walikelas
             onValue(ref(rtdb, 'walikelas'), (snapshot) => {
                 const data = snapshot.val() || {};
-                dbWaliKelas = Object.entries(data).map(([id, value]) => ({ id, ...(value || {}) }));
-                dbWaliKelas.sort((a,b) => String(a.classId || a.id || '').localeCompare(String(b.classId || b.id || ''), undefined, {numeric:true}));
+                dbWaliKelas = Object.entries(data).map(([id, value]) => ({
+                    id,
+                    ...(value || {})
+                }));
+                dbWaliKelas.sort((a, b) => {
+                    const idA = String(a.classId || a.id || '');
+                    const idB = String(b.classId || b.id || '');
+                    return idA.localeCompare(idB, undefined, { numeric: true });
+                });
                 window.dbWaliKelas = dbWaliKelas;
                 updateClassDropdown();
                 renderClassCards();
                 renderWaliDashboard();
                 setReady('realtimeWaliReady', true, null);
-                if (window.realtimeSiswaReady === true && window.realtimePetugasReady === true) resolveMasterData();
             }, (error) => {
                 console.error('RTDB walikelas error:', error);
                 setReady('realtimeWaliReady', false, error);
@@ -910,21 +775,46 @@
             // PETUGAS -> /petugas
             onValue(ref(rtdb, 'petugas'), (snapshot) => {
                 const data = snapshot.val() || {};
-                dbPetugas = Object.entries(data).map(([id, value]) => ({ id, ...(value || {}) }));
+                dbPetugas = Object.entries(data).map(([id, value]) => ({
+                    id,
+                    ...(value || {})
+                }));
                 window.dbPetugas = dbPetugas;
                 renderTablePetugas();
                 setReady('realtimePetugasReady', true, null);
-                if (window.realtimeSiswaReady === true && window.realtimeWaliReady === true) resolveMasterData();
             }, (error) => {
                 console.error('RTDB petugas error:', error);
                 setReady('realtimePetugasReady', false, error);
                 showToast('Gagal membaca akun petugas dari Realtime Database.', 'error');
             });
 
+            // PENJEMPUTAN -> /penjemputan
+            onValue(ref(rtdb, 'penjemputan'), (snapshot) => {
+                const data = snapshot.val() || {};
+                dbPenjemputan = Object.entries(data).map(([id, value]) => ({ id, ...(value || {}) }));
+                window.dbPenjemputan = dbPenjemputan;
+                renderPenjemputanTable();
+                renderWaliDashboard();
+            }, (error) => {
+                console.error('RTDB penjemputan error:', error);
+                showToast('Gagal membaca data penjemputan Realtime Database.', 'error');
+            });
+
+            // LOG -> /logs
+            onValue(ref(rtdb, 'logs'), (snapshot) => {
+                const data = snapshot.val() || {};
+                const logs = Object.entries(data).map(([id, value]) => ({ id, ...(value || {}) }));
+                logs.sort((a, b) => String(b.timestamp || '').localeCompare(String(a.timestamp || '')));
+                renderLogs(logs);
+            }, (error) => {
+                console.error('RTDB logs error:', error);
+            });
+
             // SETTINGS -> /settings/app_config
             onValue(ref(rtdb, 'settings/app_config'), (snapshot) => {
                 const cfg = snapshot.val() || {};
                 if (cfg.adminEmail) window.appCredentials.adminEmail = cfg.adminEmail;
+
                 const savedUser = JSON.parse(sessionStorage.getItem('e_user') || '{}');
                 if (savedUser.role === 'admin') {
                     const adminUserEl = document.getElementById('adminUsernameInput');
@@ -935,24 +825,6 @@
                 console.error('RTDB settings error:', error);
                 setReady('realtimeSettingsReady', false, error);
             });
-
-            // PENJEMPUTAN HARI INI: listener hanya pada data hari ini.
-            // Firebase akan mengirim child awal lalu hanya child yang berubah.
-            const today = getLocalDateString();
-            realtimeTodayPickupQuery = query(ref(rtdb, 'penjemputan'), orderByChild('tanggal'), equalTo(today));
-            loadedPickupDates.add(today);
-            onChildAdded(realtimeTodayPickupQuery, (snap) => mergePickupRecord(snap.key, snap.val()));
-            onChildChanged(realtimeTodayPickupQuery, (snap) => mergePickupRecord(snap.key, snap.val()));
-            onChildRemoved(realtimeTodayPickupQuery, (snap) => removePenjemputanRecord(snap.key));
-            setReady('realtimePenjemputanReady', true, null);
-
-            // LOG HARI INI: sama, tidak membaca seluruh histori setiap kali scan.
-            realtimeTodayLogQuery = query(ref(rtdb, 'logs'), orderByChild('tanggal'), equalTo(today));
-            loadedLogDates.add(today);
-            onChildAdded(realtimeTodayLogQuery, (snap) => mergeLogRecord(snap.key, snap.val()));
-            onChildChanged(realtimeTodayLogQuery, (snap) => mergeLogRecord(snap.key, snap.val()));
-            onChildRemoved(realtimeTodayLogQuery, (snap) => removeLogRecord(snap.key));
-            setReady('realtimeLogsReady', true, null);
         }
 
         function updateFirebaseDiagnostic() {
@@ -976,25 +848,10 @@
         function renderLogs(logs) {
             const container = document.getElementById('scanLogContainer');
             if (!container) return;
-
-            const today = getLocalDateString();
-            const todayLogs = (logs || [])
-                .filter(log => {
-                    if (log.tanggal) return String(log.tanggal) === today;
-                    if (log.timestamp) return getLocalDateString(new Date(log.timestamp)) === today;
-                    return true;
-                })
-                .sort((a, b) => {
-                    const timeDiff = getRecordSortTime(b) - getRecordSortTime(a);
-                    if (timeDiff !== 0) return timeDiff;
-                    return String(b.timestamp || '').localeCompare(String(a.timestamp || ''));
-                });
-
             container.innerHTML = '';
-            const countEl = document.getElementById('logCount');
-            if (countEl) countEl.innerText = todayLogs.length;
+            document.getElementById('logCount').innerText = logs.length;
 
-            if (todayLogs.length === 0) {
+            if (logs.length === 0) {
                 container.innerHTML = `
                     <div id="emptyLog" class="text-center py-8 text-slate-400">
                         <i class="fa-solid fa-car-side text-4xl mb-2 text-slate-300"></i>
@@ -1003,21 +860,16 @@
                 return;
             }
 
-            todayLogs.slice(0, 50).forEach((log, index) => {
-                const canceled = String(log.status || '').toLowerCase() === 'dibatalkan';
+            logs.forEach(log => {
                 const logItem = document.createElement('div');
-                logItem.className = canceled
-                    ? 'p-3 border rounded-xl text-xs space-y-1 bg-rose-50 border-rose-200'
-                    : (index === 0
-                        ? 'p-3 border-2 rounded-xl text-xs space-y-1 bg-emerald-50 border-emerald-300 shadow-sm'
-                        : 'p-3 border rounded-xl text-xs space-y-1 bg-indigo-50/70 border-indigo-100');
+                logItem.className = 'p-3 border rounded-xl text-xs space-y-1 bg-indigo-50/70 border-indigo-100';
                 logItem.innerHTML = `
-                    <div class="flex justify-between items-center font-bold ${canceled ? 'text-rose-900' : 'text-indigo-900'}">
-                        <span>${canceled ? '<i class="fa-solid fa-ban mr-1"></i>' : '<i class="fa-solid fa-circle-check mr-1"></i>'}${log.nama} <span class="text-slate-500 font-normal">(${log.kelas})</span></span>
-                        <span class="text-[10px] ${canceled ? 'bg-rose-200 text-rose-800' : 'bg-indigo-200 text-indigo-800'} px-1.5 py-0.5 rounded">${log.waktu || '-'}</span>
+                    <div class="flex justify-between items-center font-bold text-indigo-900">
+                        <span>${log.nama} <span class="text-slate-500 font-normal">(${log.kelas})</span></span>
+                        <span class="text-[10px] bg-indigo-200 text-indigo-800 px-1.5 py-0.5 rounded">${log.waktu}</span>
                     </div>
-                    <div class="text-[11px] ${canceled ? 'text-rose-700' : 'text-slate-600'} flex items-center justify-between pt-1">
-                        <span><i class="fa-solid ${canceled ? 'fa-rotate-left' : 'fa-car-side'} mr-1"></i> <strong>${canceled ? 'Penjemputan dibatalkan' : 'Dijemput oleh:'}</strong> ${canceled ? (log.cancelledBy || 'Admin') : (log.petugasNama || 'Piket')}</span>
+                    <div class="text-[11px] text-slate-600 flex items-center justify-between pt-1">
+                        <span><i class="fa-solid fa-car-side text-indigo-600"></i> <strong>Dijemput oleh:</strong> ${log.petugasNama || 'Piket'}</span>
                     </div>
                 `;
                 container.appendChild(logItem);
@@ -1188,12 +1040,10 @@
         // =========================================================
         window.addPenjemputanFirebase = async function(penjemputanData) {
             try {
-                const now = Date.now();
                 const newRef = push(ref(rtdb, 'penjemputan'));
                 await set(newRef, {
                     ...penjemputanData,
-                    createdAt: new Date(now).toISOString(),
-                    createdAtMs: now
+                    createdAt: new Date().toISOString()
                 });
                 return newRef.key;
             } catch(e) {
@@ -1205,12 +1055,10 @@
 
         window.addScanLogFirebase = async function(logData) {
             try {
-                const now = Date.now();
                 const newRef = push(ref(rtdb, 'logs'));
                 await set(newRef, {
                     ...logData,
-                    timestamp: new Date(now).toISOString(),
-                    timestampMs: now
+                    timestamp: new Date().toISOString()
                 });
                 return newRef.key;
             } catch(e) {
@@ -1220,41 +1068,12 @@
 
         window.deletePenjemputanRTDB = async function(id) {
             try {
-                const currentUser = JSON.parse(sessionStorage.getItem('e_user') || '{}');
-                if (currentUser.role !== 'admin') {
-                    showToast('Hanya Admin yang dapat membatalkan penjemputan.', 'error');
-                    return;
-                }
                 if (!id) return;
-                const record = (window.dbPenjemputan || []).find(p => String(p.id) === String(id));
-                if (!record) return;
-
-                const ok = confirm(`Batalkan penjemputan ${record.nama || 'siswa'}?\n\nStatus akan kembali menjadi BELUM DIJEMPUT pada wali kelas.`);
-                if (!ok) return;
-
                 await remove(ref(rtdb, `penjemputan/${id}`));
-
-                // Tandai log sebagai dibatalkan agar monitor tetap menunjukkan perubahan,
-                // tetapi rekap penjemputan tidak lagi menghitung siswa tersebut.
-                const logsSnap = await get(ref(rtdb, 'logs'));
-                const logsData = logsSnap.val() || {};
-                const logUpdates = {};
-                Object.entries(logsData).forEach(([logId, log]) => {
-                    if (log && (String(log.penjemputanId || '') === String(id) ||
-                        (normalizeNIS(log.nis) === normalizeNIS(record.nis) && String(log.tanggal || '') === String(record.tanggal || '') && String(log.waktu || '').startsWith(String(record.waktu || ''))))) {
-                        logUpdates[`logs/${logId}/status`] = 'Dibatalkan';
-                        logUpdates[`logs/${logId}/cancelledBy`] = currentUser.name || 'Admin';
-                        logUpdates[`logs/${logId}/cancelledAt`] = new Date().toISOString();
-                        logUpdates[`logs/${logId}/cancelledAtMs`] = Date.now();
-                    }
-                });
-                if (Object.keys(logUpdates).length) await update(ref(rtdb), logUpdates);
-
-                showScanResult('success', 'Penjemputan Dibatalkan Admin', `${record.nama || 'Siswa'} tidak jadi dijemput.`, `Dibatalkan oleh ${currentUser.name || 'Admin'}. Status Wali Kelas kembali menjadi Belum Dijemput.`);
-                showToast(`Penjemputan ${record.nama || ''} dibatalkan. Wali kelas akan otomatis kembali menjadi Belum Dijemput.`, 'success');
+                showToast('Data penjemputan dihapus.');
             } catch(e) {
                 console.error(e);
-                showToast('Gagal membatalkan data penjemputan.', 'error');
+                showToast('Gagal menghapus data penjemputan.', 'error');
             }
         };
 
@@ -1318,26 +1137,45 @@
         window.realtimeSiswaReady = null;
         window.realtimeSettingsReady = null;
 
+        // Firebase Authentication memulihkan sesi login secara asynchronous setelah halaman di-refresh.
+        // onAuthStateChanged menjadi sumber kebenaran untuk sesi Admin.
         onAuthStateChanged(auth, (user) => {
             window.firebaseAdminUser = user || null;
+
             const emailEl = document.getElementById('adminUsernameInput');
             if (emailEl && user?.email) emailEl.value = user.email;
-            resolveAuthState();
 
-            // Pulihkan Admin hanya setelah Firebase selesai memulihkan sesi.
-            const savedUserRaw = sessionStorage.getItem('e_user');
-            if (savedUserRaw) {
-                try {
-                    const savedUser = JSON.parse(savedUserRaw);
-                    if (savedUser.role === 'admin') {
-                        if (user) applyUserRole(savedUser);
-                        else sessionStorage.removeItem('e_user');
-                    } else {
-                        // Petugas/Wali memakai akun RTDB dan tidak bergantung pada Firebase Auth.
-                        applyUserRole(savedUser);
-                    }
-                } catch (e) {
-                    sessionStorage.removeItem('e_user');
+            const loginScreen = document.getElementById('loginScreen');
+            const appContent = document.getElementById('appContent');
+
+            if (user) {
+                // Sesi Firebase Auth masih aktif -> Admin tetap masuk walaupun refresh.
+                const adminUser = {
+                    role: 'admin',
+                    name: 'Master Admin',
+                    uid: user.uid,
+                    email: user.email || ''
+                };
+                sessionStorage.setItem('e_user', JSON.stringify(adminUser));
+                applyUserRole(adminUser);
+            } else {
+                // Tidak ada sesi Admin. Petugas/Wali tetap dapat dipulihkan dari sessionStorage.
+                const savedUserRaw = sessionStorage.getItem('e_user');
+                if (savedUserRaw) {
+                    try {
+                        const savedUser = JSON.parse(savedUserRaw);
+                        if (savedUser.role && savedUser.role !== 'admin') {
+                            applyUserRole(savedUser);
+                            return;
+                        }
+                    } catch (e) {}
+                }
+
+                sessionStorage.removeItem('e_user');
+                if (loginScreen) loginScreen.classList.remove('hidden');
+                if (appContent) {
+                    appContent.classList.add('hidden');
+                    appContent.classList.remove('flex');
                 }
             }
         });
@@ -1369,88 +1207,15 @@
         async function handleLogin(e) {
             e.preventDefault();
             const u = document.getElementById('loginUsername').value.trim();
-            const p = document.getElementById('loginPassword').value;
+            const p = document.getElementById('loginPassword').value.trim();
             const errorEl = document.getElementById('loginError');
             errorEl.classList.add('hidden');
 
-            if (!u || !p) {
-                errorEl.innerText = 'Username/email dan password wajib diisi.';
-                errorEl.classList.remove('hidden');
-                return;
-            }
-
-            // LOGIN CEPAT: jangan menunggu seluruh master data (siswa + wali + petugas).
-            // Jika listener belum selesai, ambil hanya node akun yang diperlukan.
-            let listPetugas = window.dbPetugas || [];
-            let listWali = window.dbWaliKelas || [];
-
-            try {
-                const [petugasSnap, waliSnap] = await Promise.all([
-                    get(ref(rtdb, 'petugas')),
-                    get(ref(rtdb, 'walikelas'))
-                ]);
-                if (petugasSnap.exists()) {
-                    listPetugas = Object.entries(petugasSnap.val() || {}).map(([id, value]) => ({ id, ...(value || {}) }));
-                    window.dbPetugas = listPetugas;
-                }
-                if (waliSnap.exists()) {
-                    listWali = Object.entries(waliSnap.val() || {}).map(([id, value]) => ({ id, ...(value || {}) }));
-                    window.dbWaliKelas = listWali;
-                }
-            } catch (readError) {
-                console.warn('Login direct lookup gagal, memakai cache RTDB:', readError);
-            }
-
-            // PETUGAS PIKET -> akun lokal di RTDB.
-            const matchedPetugas = listPetugas.find(pt =>
-                String(pt.username || '').trim().toLowerCase() === u.toLowerCase() &&
-                String(pt.password || '').trim() === p
-            );
-            if (matchedPetugas) {
-                const petugasUser = {
-                    role: 'piket',
-                    id: matchedPetugas.id,
-                    name: matchedPetugas.nama,
-                    username: matchedPetugas.username
-                };
-                sessionStorage.setItem('e_user', JSON.stringify(petugasUser));
-                applyUserRole(petugasUser);
-                return;
-            }
-
-            // WALI KELAS -> akun lokal di RTDB.
-            const matchedWali = listWali.find(w =>
-                (
-                    String(w.username || '').trim().toLowerCase() === u.toLowerCase() ||
-                    String(w.classId || '').trim().toLowerCase() === u.toLowerCase()
-                ) &&
-                String(w.password || '').trim() === p
-            );
-            if (matchedWali) {
-                const waliUser = {
-                    role: 'walikelas',
-                    classId: matchedWali.classId || matchedWali.id,
-                    kelas: matchedWali.kelas,
-                    name: matchedWali.nama,
-                    username: matchedWali.username || matchedWali.classId,
-                    wa: matchedWali.wa
-                };
-                sessionStorage.setItem('e_user', JSON.stringify(waliUser));
-                applyUserRole(waliUser);
-                return;
-            }
-
-            // ADMIN -> Firebase Authentication.
-            // Hanya dicoba setelah akun lokal tidak cocok, sehingga login petugas/wali cepat.
-            if (u.includes('@')) {
+            // ADMIN -> Firebase Authentication
+            if (u && p) {
                 try {
                     const credential = await window.firebaseSignIn(u, p);
-                    const adminUser = {
-                        role: 'admin',
-                        name: 'Master Admin',
-                        uid: credential.user.uid,
-                        email: credential.user.email || u
-                    };
+                    const adminUser = { role: 'admin', name: 'Master Admin', uid: credential.user.uid, email: credential.user.email || u };
                     sessionStorage.setItem('e_user', JSON.stringify(adminUser));
                     applyUserRole(adminUser);
                     const adminEmailEl = document.getElementById('adminUsernameInput');
@@ -1459,6 +1224,31 @@
                 } catch (authError) {
                     console.warn('Firebase Auth admin login gagal:', authError?.code || authError);
                 }
+            }
+
+            // PETUGAS PIKET -> akun lokal di RTDB
+            const listPetugas = window.dbPetugas || [];
+            if (window.realtimePetugasReady === false && window.realtimePetugasError) {
+                errorEl.innerText = 'Data akun petugas tidak bisa dibaca dari Realtime Database. Cek Rules RTDB.';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+            const matchedPetugas = listPetugas.find(pt => String(pt.username || '').trim().toLowerCase() === u.toLowerCase() && String(pt.password || '').trim() === p);
+            if (matchedPetugas) {
+                const petugasUser = { role: 'piket', id: matchedPetugas.id, name: matchedPetugas.nama, username: matchedPetugas.username };
+                sessionStorage.setItem('e_user', JSON.stringify(petugasUser));
+                applyUserRole(petugasUser);
+                return;
+            }
+
+            // WALI KELAS -> akun lokal di RTDB
+            const listWali = window.dbWaliKelas || [];
+            const matchedWali = listWali.find(w => (String(w.username || '').trim().toLowerCase() === u.toLowerCase() || String(w.classId || '').trim() === u) && String(w.password || '').trim() === p);
+            if (matchedWali) {
+                const waliUser = { role: 'walikelas', classId: matchedWali.classId || matchedWali.id, kelas: matchedWali.kelas, name: matchedWali.nama, username: matchedWali.username || matchedWali.classId, wa: matchedWali.wa };
+                sessionStorage.setItem('e_user', JSON.stringify(waliUser));
+                applyUserRole(waliUser);
+                return;
             }
 
             errorEl.innerText = 'Email/password Firebase atau username/password akun tidak cocok.';
@@ -1511,15 +1301,11 @@
         }
 
         window.addEventListener('DOMContentLoaded', () => {
-            // Session dipulihkan oleh onAuthStateChanged di atas.
-            // Di sini hanya mengatur tanggal default dan fokus scanner.
+            // Firebase Auth memulihkan sesi melalui onAuthStateChanged di atas.
             const dateInputJemput = document.getElementById('filterPenjemputanDate');
-            const nowLocal = new Date();
-            const localDate = getLocalDateString(nowLocal);
-            if (dateInputJemput) dateInputJemput.value = localDate;
-
+            if (dateInputJemput) dateInputJemput.value = new Date().toISOString().split('T')[0];
             const dateInputWali = document.getElementById('filterWaliDate');
-            if (dateInputWali) dateInputWali.value = localDate;
+            if (dateInputWali) dateInputWali.value = new Date().toISOString().split('T')[0];
 
             const adminEmailEl = document.getElementById('adminUsernameInput');
             if (adminEmailEl && window.firebaseAuth?.currentUser?.email) {
@@ -1653,122 +1439,35 @@
             return String(value ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
         }
 
-        function showScanResult(type, title, message, detail = '') {
-            const panel = document.getElementById('scanResultPanel');
-            const iconWrap = document.getElementById('scanResultIconWrap');
-            const icon = document.getElementById('scanResultIcon');
-            const titleEl = document.getElementById('scanResultTitle');
-            const msgEl = document.getElementById('scanResultMessage');
-            const detailEl = document.getElementById('scanResultDetail');
-            if (!panel) return;
-
-            const styles = {
-                success: { box: 'border-emerald-300 bg-emerald-50', wrap: 'bg-emerald-100 text-emerald-700', icon: 'fa-circle-check', title: 'text-emerald-900', msg: 'text-emerald-800', detail: 'text-emerald-700' },
-                warning: { box: 'border-amber-300 bg-amber-50', wrap: 'bg-amber-100 text-amber-700', icon: 'fa-triangle-exclamation', title: 'text-amber-900', msg: 'text-amber-800', detail: 'text-amber-700' },
-                error: { box: 'border-rose-300 bg-rose-50', wrap: 'bg-rose-100 text-rose-700', icon: 'fa-circle-xmark', title: 'text-rose-900', msg: 'text-rose-800', detail: 'text-rose-700' }
-            };
-            const st = styles[type] || styles.success;
-            panel.className = `mb-4 rounded-2xl border-2 p-4 shadow-sm ${st.box}`;
-            iconWrap.className = `w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${st.wrap}`;
-            icon.className = `fa-solid ${st.icon} text-xl`;
-            titleEl.className = `font-extrabold text-base ${st.title}`;
-            msgEl.className = `text-sm mt-1 ${st.msg}`;
-            detailEl.className = `text-xs mt-2 font-medium ${st.detail}`;
-            titleEl.textContent = title;
-            msgEl.textContent = message;
-            detailEl.textContent = detail || '';
-            panel.classList.remove('hidden');
-        }
-
-        async function findTodayPickupByNis(nis, todayStr) {
-            const normalized = normalizeNIS(nis);
-            const local = (window.dbPenjemputan || []).filter(p =>
-                normalizeNIS(p.nis) === normalized &&
-                String(p.tanggal || '').trim() === String(todayStr).trim() &&
-                String(p.statusPenjemputan || '').toLowerCase() !== 'dibatalkan'
-            );
-            if (local.length) {
-                local.sort((a,b) => getRecordSortTime(b) - getRecordSortTime(a));
-                return local[0];
-            }
-
-            // Jangan membaca seluruh /penjemputan. Hanya cari NIS + tanggal hari ini.
-            try {
-                const snap = await get(query(ref(rtdb, 'penjemputan'), orderByChild('tanggal'), equalTo(todayStr)));
-                const data = snap.val() || {};
-                const found = Object.entries(data)
-                    .map(([id,v]) => ({id, ...(v || {})}))
-                    .filter(p => normalizeNIS(p.nis) === normalized && String(p.statusPenjemputan || '').toLowerCase() !== 'dibatalkan')
-                    .sort((a,b) => getRecordSortTime(b) - getRecordSortTime(a));
-                found.forEach(p => mergePickupRecord(p.id, p));
-                return found[0] || null;
-            } catch (e) {
-                console.warn('Gagal mengecek status pickup:', e);
-                return null;
-            }
-        }
-
         async function processPenjemputanScan(nis) {
             const normalizedNIS = normalizeNIS(nis);
-            if (!normalizedNIS) return;
-
             const siswa = (window.dbSiswa || []).find(s => normalizeNIS(s.nis) === normalizedNIS);
-            if (!siswa) {
-                showScanResult('error', 'Data Siswa Tidak Ditemukan', `Barcode/NIS ${normalizedNIS} tidak terdaftar di database.`, 'Silakan cek barcode siswa.');
-                showToast('Siswa tidak ditemukan!', 'error');
-                return;
-            }
+            if (!siswa) { showToast(`Siswa tidak ditemukan!`, "error"); return; }
 
-            const now = new Date();
-            const todayStr = getLocalDateString(now);
-            const existingPenjemputan = await findTodayPickupByNis(normalizedNIS, todayStr);
+            const todayStr = new Date().toISOString().split('T')[0];
+            const existingPenjemputan = (window.dbPenjemputan || []).find(p =>
+                normalizeNIS(p.nis) === normalizedNIS && String(p.tanggal ?? '').trim() === todayStr
+            );
             if (existingPenjemputan) {
-                const jam = existingPenjemputan.waktu || '-';
-                const petugas = existingPenjemputan.petugasNama || 'Petugas Piket';
-                showScanResult('warning', 'Siswa Sudah Dijemput', `${siswa.nama} sudah dijemput hari ini.`, `Dijemput pukul ${jam} oleh ${petugas}. Scan ulang tidak membuat data baru.`);
-                showToast(`Siswa ${siswa.nama} sudah dijemput pukul ${jam}.`, 'error');
+                showToast(`Siswa ${siswa.nama} sudah dijemput hari ini pukul ${existingPenjemputan.waktu}.`, "error");
                 return;
             }
 
             const currentUser = JSON.parse(sessionStorage.getItem('e_user') || '{}');
             const petugasName = currentUser.name || 'Petugas Piket';
-            const jamPenjemputan = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-            const record = {
-                nis: normalizedNIS,
-                nama: siswa.nama,
-                kelas: siswa.kelas,
-                noAbsen: parseInt(siswa.noAbsen) || 999,
-                tanggal: todayStr,
-                waktu: jamPenjemputan,
-                statusPenjemputan: 'Sudah Dijemput',
-                petugasNama: petugasName,
-                createdAt: now.toISOString(),
-                createdAtMs: now.getTime()
-            };
+            const jamPenjemputan = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 
-            let penjemputanId = null;
-            try {
-                // Tulis record terlebih dahulu. Setelah Firebase mengonfirmasi,
-                // masukkan ke cache lokal SEGERA agar UI tidak menunggu listener.
-                penjemputanId = await window.addPenjemputanFirebase(record);
-                mergePickupRecord(penjemputanId, record);
-
-                // Log tidak boleh menghambat perubahan status siswa.
-                window.addScanLogFirebase({
-                    ...record,
-                    waktu: jamPenjemputan + ' WIB',
-                    penjemputanId,
-                    status: 'Berhasil'
-                }).catch(err => console.warn('Log scan gagal:', err));
-
-                // Feedback langsung di panel atas scanner.
-                showScanResult('success', 'Siswa Sudah Dijemput', `${siswa.nama} (${siswa.kelas}) berhasil dijemput.`, `Dijemput pukul ${jamPenjemputan} oleh ${petugasName}. Data tersimpan dan akan tersinkron ke semua perangkat.`);
-                showToast(`✓ ${siswa.nama} berhasil dijemput pukul ${jamPenjemputan}.`, 'success');
-            } catch (e) {
-                console.error('processPenjemputanScan:', e);
-                showScanResult('error', 'Penjemputan Gagal Disimpan', `Data ${siswa.nama} belum berhasil disimpan.`, `Firebase tidak mengonfirmasi penyimpanan. Jangan scan berulang sebelum koneksi kembali normal.`);
-                showToast('Gagal menyimpan penjemputan. Cek koneksi/Rules RTDB.', 'error');
+            if (window.addPenjemputanFirebase) {
+                await window.addPenjemputanFirebase({
+                    nis: normalizedNIS, nama: siswa.nama, kelas: siswa.kelas,
+                    noAbsen: parseInt(siswa.noAbsen) || 999, tanggal: todayStr,
+                    waktu: jamPenjemputan, statusPenjemputan: 'Sudah Dijemput', petugasNama: petugasName
+                });
             }
+            if (window.addScanLogFirebase) {
+                window.addScanLogFirebase({ nama: siswa.nama, kelas: siswa.kelas, waktu: jamPenjemputan + ' WIB', petugasNama: petugasName });
+            }
+            showToast(`Penjemputan berhasil: ${siswa.nama} (${siswa.kelas})`, "success");
         }
 
         function renderWaliDashboard() {
@@ -1776,9 +1475,7 @@
             if (currentUser.role !== 'walikelas') return;
 
             const kelasWali = currentUser.kelas || '';
-            const filterDate = document.getElementById('filterWaliDate')?.value || getLocalDateString();
-            // Pastikan tanggal yang dipilih tersedia di cache. Hari ini sudah realtime.
-            if (filterDate !== getLocalDateString() && !loadedPickupDates.has(filterDate)) loadPickupDate(filterDate).then(() => { if (document.getElementById('filterWaliDate')?.value === filterDate) renderWaliDashboard(); });
+            const filterDate = document.getElementById('filterWaliDate')?.value || new Date().toISOString().split('T')[0];
             const normalizedKelasWali = normalizeKelas(kelasWali);
             const semuaSiswa = window.dbSiswa || [];
             const semuaPenjemputan = window.dbPenjemputan || [];
@@ -1792,12 +1489,9 @@
                 const nis = normalizeNIS(p.nis);
                 const tanggal = String(p.tanggal ?? '').trim();
                 if (!nis || tanggal !== String(filterDate).trim()) return;
-                if (String(p.statusPenjemputan || '').toLowerCase() === 'dibatalkan') return;
                 const key = `${nis}_${tanggal}`;
                 const existing = jemputMap.get(key);
-                if (!existing || getRecordSortTime(p) > getRecordSortTime(existing) || (getRecordSortTime(p) === getRecordSortTime(existing) && String(p.waktu || '') > String(existing.waktu || ''))) {
-                    jemputMap.set(key, p);
-                }
+                if (!existing || String(p.waktu || '') < String(existing.waktu || '')) jemputMap.set(key, p);
             });
 
             const dataSiswa = listSiswa.map(s => {
@@ -1826,11 +1520,9 @@
                 if (a.isPickedUp && !b.isPickedUp) return -1;
                 if (!a.isPickedUp && b.isPickedUp) return 1;
                 if (a.isPickedUp && b.isPickedUp) {
-                    const timeA = getRecordSortTime(a.jemputRecord);
-                    const timeB = getRecordSortTime(b.jemputRecord);
-                    if (timeA !== timeB) return timeB - timeA;
                     const waktuA = String(a.jemputRecord?.waktu || '00:00:00').trim();
                     const waktuB = String(b.jemputRecord?.waktu || '00:00:00').trim();
+                    // Terbaru/terakhir dijemput = waktu terbesar, sehingga diletakkan paling atas.
                     return waktuB.localeCompare(waktuA, undefined, {numeric:true});
                 }
                 return (parseInt(a.noAbsen)||999) - (parseInt(b.noAbsen)||999);
@@ -1858,10 +1550,10 @@
             if (currentUser.role !== 'walikelas') return;
 
             const kelasWali = currentUser.kelas;
-            const filterDate = document.getElementById('filterWaliDate')?.value || getLocalDateString();
+            const filterDate = document.getElementById('filterWaliDate')?.value || new Date().toISOString().split('T')[0];
             
             const listSiswa = (window.dbSiswa || []).filter(s => normalizeKelas(s.kelas) === normalizeKelas(kelasWali));
-            const listJemput = (window.dbPenjemputan || []).filter(p => String(p.tanggal ?? '').trim() === String(filterDate).trim() && String(p.statusPenjemputan || '').toLowerCase() !== 'dibatalkan');
+            const listJemput = (window.dbPenjemputan || []).filter(p => String(p.tanggal ?? '').trim() === String(filterDate).trim());
 
             const alreadyPickedUpNisMap = new Map();
             listJemput.forEach(p => alreadyPickedUpNisMap.set(normalizeNIS(p.nis), p));
@@ -1962,14 +1654,10 @@
         // ==========================================
         // ADMIN & PIKET AUXILIARY FUNCTIONS
         // ==========================================
-        async function renderPenjemputanTable() {
+        function renderPenjemputanTable() {
             const tbody = document.getElementById('tablePenjemputanBody');
             if (!tbody) return;
-            const currentUser = JSON.parse(sessionStorage.getItem('e_user') || '{}');
-            const actionHeader = document.getElementById('penjemputanActionHeader');
-            if (actionHeader) actionHeader.classList.toggle('hidden', currentUser.role !== 'admin');
-            const filterDate = document.getElementById('filterPenjemputanDate')?.value || getLocalDateString();
-            await loadPickupDate(filterDate);
+            const filterDate = document.getElementById('filterPenjemputanDate')?.value || new Date().toISOString().split('T')[0];
             tbody.innerHTML = '';
 
             const listPenjemputan = (window.dbPenjemputan || []).filter(p => p.tanggal === filterDate);
@@ -1984,7 +1672,7 @@
             });
 
             if (listPenjemputan.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="8" class="text-center py-8 text-slate-400">Belum ada data penjemputan pada tanggal ${filterDate}.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-slate-400">Belum ada data penjemputan pada tanggal ${filterDate}.</td></tr>`;
                 return;
             }
 
@@ -1999,18 +1687,13 @@
                     <td class="p-3 font-mono text-xs">${item.waktu}</td>
                     <td class="p-3"><span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-700">${item.statusPenjemputan || 'Sudah Dijemput'}</span></td>
                     <td class="p-3 text-slate-500 text-xs">${item.petugasNama || 'Piket'}</td>
-                    <td class="p-3 text-center admin-only ${JSON.parse(sessionStorage.getItem('e_user') || '{}').role === 'admin' ? '' : 'hidden'}">
-                        <button onclick="deletePenjemputanRTDB('${item.id}')" class="bg-rose-100 hover:bg-rose-200 text-rose-700 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition" title="Batalkan penjemputan">
-                            <i class="fa-solid fa-rotate-left mr-1"></i>Batal
-                        </button>
-                    </td>
                 `;
                 tbody.appendChild(tr);
             });
         }
 
         function exportPenjemputanExcel() {
-            const filterDate = document.getElementById('filterPenjemputanDate')?.value || getLocalDateString();
+            const filterDate = document.getElementById('filterPenjemputanDate')?.value || new Date().toISOString().split('T')[0];
             const listPenjemputan = (window.dbPenjemputan || []).filter(p => p.tanggal === filterDate);
             if (window.XLSX) {
                 const sheetData = [["No", "NIS", "Nama Siswa", "Kelas", "Jam Dijemput", "Status", "Petugas Piket"]];
