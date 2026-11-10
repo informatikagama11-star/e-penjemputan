@@ -795,10 +795,10 @@
                     (parseInt(a.noAbsen) || 999) - (parseInt(b.noAbsen) || 999)
                 );
                 window.dbSiswa = dbSiswa;
+                setReady('realtimeSiswaReady', true, null);
                 renderClassCards();
                 renderTableSiswaDetail();
                 renderWaliDashboard();
-                setReady('realtimeSiswaReady', true, null);
             }, (error) => {
                 console.error('RTDB siswa error:', error);
                 setReady('realtimeSiswaReady', false, error);
@@ -818,10 +818,10 @@
                     return idA.localeCompare(idB, undefined, { numeric: true });
                 });
                 window.dbWaliKelas = dbWaliKelas;
+                setReady('realtimeWaliReady', true, null);
                 updateClassDropdown();
                 renderClassCards();
                 renderWaliDashboard();
-                setReady('realtimeWaliReady', true, null);
             }, (error) => {
                 console.error('RTDB walikelas error:', error);
                 setReady('realtimeWaliReady', false, error);
@@ -849,10 +849,12 @@
                 const data = snapshot.val() || {};
                 dbPenjemputan = Object.entries(data).map(([id, value]) => ({ id, ...(value || {}) }));
                 window.dbPenjemputan = dbPenjemputan;
+                setReady('realtimePenjemputanReady', true, null);
                 renderPenjemputanTable();
                 renderWaliDashboard();
             }, (error) => {
                 console.error('RTDB penjemputan error:', error);
+                setReady('realtimePenjemputanReady', false, error);
                 showToast('Gagal membaca data penjemputan Realtime Database.', 'error');
             });
 
@@ -895,6 +897,7 @@
                 window.realtimePetugasError,
                 window.realtimeWaliError,
                 window.realtimeSiswaError,
+                window.realtimePenjemputanError,
                 window.realtimeSettingsError
             ].filter(Boolean);
             if (errors.length) {
@@ -1210,6 +1213,7 @@
         window.realtimePetugasReady = null;
         window.realtimeWaliReady = null;
         window.realtimeSiswaReady = null;
+        window.realtimePenjemputanReady = null;
         window.realtimeSettingsReady = null;
 
         // Firebase Authentication memulihkan sesi login secara asynchronous setelah halaman di-refresh.
@@ -1301,28 +1305,76 @@
                 }
             }
 
-            // PETUGAS PIKET -> akun lokal di RTDB
-            const listPetugas = window.dbPetugas || [];
-            if (window.realtimePetugasReady === false && window.realtimePetugasError) {
-                errorEl.innerText = 'Data akun petugas tidak bisa dibaca dari Realtime Database. Cek Rules RTDB.';
-                errorEl.classList.remove('hidden');
-                return;
-            }
-            const matchedPetugas = listPetugas.find(pt => String(pt.username || '').trim().toLowerCase() === u.toLowerCase() && String(pt.password || '').trim() === p);
-            if (matchedPetugas) {
-                const petugasUser = { role: 'piket', id: matchedPetugas.id, name: matchedPetugas.nama, username: matchedPetugas.username };
-                sessionStorage.setItem('e_user', JSON.stringify(petugasUser));
-                applyUserRole(petugasUser);
+            // Tunggu listener akun selesai memuat data awal dari RTDB.
+            // Tanpa ini, login yang dilakukan terlalu cepat setelah halaman dibuka
+            // dapat dianggap salah meskipun username/password benar.
+            const waitForReady = async (key, label) => {
+                const startedAt = Date.now();
+                while (window[key] === null && Date.now() - startedAt < 10000) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+                if (window[key] === null) {
+                    errorEl.innerText = `Data ${label} masih dimuat. Periksa koneksi internet lalu coba masuk kembali.`;
+                    errorEl.classList.remove('hidden');
+                    return false;
+                }
+                if (window[key] === false) {
+                    errorEl.innerText = `Data ${label} gagal dibaca dari Firebase. Perlu pemeriksaan koneksi atau Rules Realtime Database.`;
+                    errorEl.classList.remove('hidden');
+                    return false;
+                }
+                return true;
+            };
+
+            // WALI KELAS diperiksa lebih dulu agar login wali tidak bergantung
+            // pada keberhasilan pembacaan node /petugas yang terpisah.
+            const waliReady = await waitForReady('realtimeWaliReady', 'akun wali kelas');
+            if (!waliReady) return;
+            const listWali = window.dbWaliKelas || [];
+            const matchedWali = listWali.find(w =>
+                (String(w.username || '').trim().toLowerCase() === u.toLowerCase() ||
+                 String(w.classId || w.id || '').trim().toLowerCase() === u.toLowerCase()) &&
+                String(w.password || '').trim() === p
+            );
+            if (matchedWali) {
+                const kelasAkun = String(matchedWali.kelas || '').trim();
+                if (!kelasAkun) {
+                    errorEl.innerText = 'Akun wali kelas ditemukan, tetapi nama kelas pada data Firebase masih kosong. Data siswa tidak diubah.';
+                    errorEl.classList.remove('hidden');
+                    console.error('Akun wali kelas tanpa field kelas:', matchedWali);
+                    return;
+                }
+                const waliUser = {
+                    role: 'walikelas',
+                    classId: matchedWali.classId || matchedWali.id,
+                    kelas: kelasAkun,
+                    name: matchedWali.nama || 'Wali Kelas',
+                    username: matchedWali.username || matchedWali.classId || matchedWali.id,
+                    wa: matchedWali.wa
+                };
+                sessionStorage.setItem('e_user', JSON.stringify(waliUser));
+                applyUserRole(waliUser);
                 return;
             }
 
-            // WALI KELAS -> akun lokal di RTDB
-            const listWali = window.dbWaliKelas || [];
-            const matchedWali = listWali.find(w => (String(w.username || '').trim().toLowerCase() === u.toLowerCase() || String(w.classId || '').trim() === u) && String(w.password || '').trim() === p);
-            if (matchedWali) {
-                const waliUser = { role: 'walikelas', classId: matchedWali.classId || matchedWali.id, kelas: matchedWali.kelas, name: matchedWali.nama, username: matchedWali.username || matchedWali.classId, wa: matchedWali.wa };
-                sessionStorage.setItem('e_user', JSON.stringify(waliUser));
-                applyUserRole(waliUser);
+            // PETUGAS PIKET -> akun lokal di RTDB. Node petugas diperiksa
+            // terpisah supaya gangguan di node ini tidak memblokir wali kelas.
+            const petugasReady = await waitForReady('realtimePetugasReady', 'akun petugas');
+            if (!petugasReady) return;
+            const listPetugas = window.dbPetugas || [];
+            const matchedPetugas = listPetugas.find(pt =>
+                String(pt.username || '').trim().toLowerCase() === u.toLowerCase() &&
+                String(pt.password || '').trim() === p
+            );
+            if (matchedPetugas) {
+                const petugasUser = {
+                    role: 'piket',
+                    id: matchedPetugas.id,
+                    name: matchedPetugas.nama || 'Petugas Piket',
+                    username: matchedPetugas.username
+                };
+                sessionStorage.setItem('e_user', JSON.stringify(petugasUser));
+                applyUserRole(petugasUser);
                 return;
             }
 
@@ -1378,9 +1430,9 @@
         window.addEventListener('DOMContentLoaded', () => {
             // Firebase Auth memulihkan sesi melalui onAuthStateChanged di atas.
             const dateInputJemput = document.getElementById('filterPenjemputanDate');
-            if (dateInputJemput) dateInputJemput.value = new Date().toISOString().split('T')[0];
+            if (dateInputJemput) dateInputJemput.value = getLocalDateString();
             const dateInputWali = document.getElementById('filterWaliDate');
-            if (dateInputWali) dateInputWali.value = new Date().toISOString().split('T')[0];
+            if (dateInputWali) dateInputWali.value = getLocalDateString();
 
             const adminEmailEl = document.getElementById('adminUsernameInput');
             if (adminEmailEl && window.firebaseAuth?.currentUser?.email) {
@@ -1506,12 +1558,25 @@
             });
         }
 
+        // Tanggal kalender lokal (Indonesia), bukan tanggal UTC dari toISOString().
+        // Ini mencegah tanggal bergeser ke hari sebelumnya pada dini hari WIB.
+        function getLocalDateString(date = new Date()) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
         function normalizeNIS(value) {
             return String(value ?? '').trim();
         }
 
         function normalizeKelas(value) {
-            return String(value ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
+            return String(value ?? '')
+                .trim()
+                .toLowerCase()
+                .replace(/^kelas\s+/, '')
+                .replace(/[\s_-]+/g, '');
         }
 
         async function processPenjemputanScan(nis) {
@@ -1519,7 +1584,7 @@
             const siswa = (window.dbSiswa || []).find(s => normalizeNIS(s.nis) === normalizedNIS);
             if (!siswa) { showToast(`Siswa tidak ditemukan!`, "error"); return; }
 
-            const todayStr = new Date().toISOString().split('T')[0];
+            const todayStr = getLocalDateString();
             const existingPenjemputan = (window.dbPenjemputan || []).find(p =>
                 normalizeNIS(p.nis) === normalizedNIS && String(p.tanggal ?? '').trim() === todayStr
             );
@@ -1565,7 +1630,22 @@
             if (currentUser.role !== 'walikelas') return;
 
             const kelasWali = currentUser.kelas || '';
-            const filterDate = document.getElementById('filterWaliDate')?.value || new Date().toISOString().split('T')[0];
+            const filterDate = document.getElementById('filterWaliDate')?.value || getLocalDateString();
+            const tbody = document.getElementById('tableWaliBody');
+            if (window.realtimeSiswaReady !== true || window.realtimePenjemputanReady !== true) {
+                if (tbody) {
+                    const failed = window.realtimeSiswaReady === false || window.realtimePenjemputanReady === false;
+                    const message = failed
+                        ? 'Data Firebase gagal dimuat. Periksa koneksi dan Rules Realtime Database; data lama tidak dihapus.'
+                        : 'Sedang memuat data siswa dan penjemputan dari Firebase...';
+                    tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-slate-400">${message}</td></tr>`;
+                }
+                return;
+            }
+            if (!normalizeKelas(kelasWali)) {
+                if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-rose-500">Nama kelas pada akun wali kelas belum terisi. Hubungi admin untuk memeriksa data akun.</td></tr>';
+                return;
+            }
             const normalizedKelasWali = normalizeKelas(kelasWali);
             const semuaSiswa = window.dbSiswa || [];
             const semuaPenjemputan = window.dbPenjemputan || [];
@@ -1622,7 +1702,6 @@
                 return (parseInt(a.noAbsen)||999) - (parseInt(b.noAbsen)||999);
             });
 
-            const tbody = document.getElementById('tableWaliBody');
             if (!tbody) return;
             tbody.innerHTML = '';
             if (!list.length) {
@@ -1644,7 +1723,7 @@
             if (currentUser.role !== 'walikelas') return;
 
             const kelasWali = currentUser.kelas;
-            const filterDate = document.getElementById('filterWaliDate')?.value || new Date().toISOString().split('T')[0];
+            const filterDate = document.getElementById('filterWaliDate')?.value || getLocalDateString();
             
             const listSiswa = (window.dbSiswa || []).filter(s => normalizeKelas(s.kelas) === normalizeKelas(kelasWali));
             const listJemput = (window.dbPenjemputan || []).filter(p => String(p.tanggal ?? '').trim() === String(filterDate).trim());
@@ -1752,7 +1831,7 @@
         function renderPenjemputanTable() {
             const tbody = document.getElementById('tablePenjemputanBody');
             if (!tbody) return;
-            const filterDate = document.getElementById('filterPenjemputanDate')?.value || new Date().toISOString().split('T')[0];
+            const filterDate = document.getElementById('filterPenjemputanDate')?.value || getLocalDateString();
             tbody.innerHTML = '';
 
             const listPenjemputan = (window.dbPenjemputan || []).filter(p => p.tanggal === filterDate);
@@ -1786,7 +1865,7 @@
         }
 
         function exportPenjemputanExcel() {
-            const filterDate = document.getElementById('filterPenjemputanDate')?.value || new Date().toISOString().split('T')[0];
+            const filterDate = document.getElementById('filterPenjemputanDate')?.value || getLocalDateString();
             const listPenjemputan = (window.dbPenjemputan || []).filter(p => p.tanggal === filterDate);
             if (window.XLSX) {
                 const sheetData = [["No", "NIS", "Nama Siswa", "Kelas", "Jam Dijemput", "Status", "Petugas Piket"]];
