@@ -1326,8 +1326,19 @@
                 return true;
             };
 
-            // WALI KELAS diperiksa lebih dulu agar login wali tidak bergantung
-            // pada keberhasilan pembacaan node /petugas yang terpisah.
+            // Periksa daftar Petugas Piket untuk SEMUA akun, termasuk akun
+            // yang juga terdaftar sebagai Wali Kelas. Keanggotaan di daftar
+            // Petugas memberi hak scan tanpa harus mengubah jabatan/role utama.
+            const petugasReady = await waitForReady('realtimePetugasReady', 'akun petugas');
+            if (!petugasReady) return;
+            const listPetugas = window.dbPetugas || [];
+            const matchedPetugas = listPetugas.find(pt =>
+                String(pt.username || '').trim().toLowerCase() === u.toLowerCase() &&
+                String(pt.password || '').trim() === p
+            );
+
+            // WALI KELAS tetap dapat masuk seperti biasa. Jika juga terdaftar
+            // sebagai petugas, akun tersebut mendapat akses tambahan Scanner.
             const waliReady = await waitForReady('realtimeWaliReady', 'akun wali kelas');
             if (!waliReady) return;
             const listWali = window.dbWaliKelas || [];
@@ -1350,22 +1361,16 @@
                     kelas: kelasAkun,
                     name: matchedWali.nama || 'Wali Kelas',
                     username: matchedWali.username || matchedWali.classId || matchedWali.id,
-                    wa: matchedWali.wa
+                    wa: matchedWali.wa,
+                    canScan: !!matchedPetugas,
+                    petugasName: matchedPetugas ? (matchedPetugas.nama || 'Petugas Piket') : ''
                 };
                 sessionStorage.setItem('e_user', JSON.stringify(waliUser));
                 applyUserRole(waliUser);
                 return;
             }
 
-            // PETUGAS PIKET -> akun lokal di RTDB. Node petugas diperiksa
-            // terpisah supaya gangguan di node ini tidak memblokir wali kelas.
-            const petugasReady = await waitForReady('realtimePetugasReady', 'akun petugas');
-            if (!petugasReady) return;
-            const listPetugas = window.dbPetugas || [];
-            const matchedPetugas = listPetugas.find(pt =>
-                String(pt.username || '').trim().toLowerCase() === u.toLowerCase() &&
-                String(pt.password || '').trim() === p
-            );
+            // PETUGAS PIKET yang bukan wali kelas masuk langsung ke Scanner.
             if (matchedPetugas) {
                 const petugasUser = {
                     role: 'piket',
@@ -1415,7 +1420,13 @@
                 adminNavs.forEach(el => el.classList.add('hidden'));
                 waliNavs.forEach(el => el.classList.remove('hidden'));
                 piketAdminTabs.forEach(el => el.classList.add('hidden'));
-                document.getElementById('headerSubtitle').innerText = `Wali Kelas ${user.kelas}`;
+                if (user.canScan) {
+                    const scannerTab = document.getElementById('tab-scanner');
+                    if (scannerTab) scannerTab.classList.remove('hidden');
+                }
+                document.getElementById('headerSubtitle').innerText = user.canScan
+                    ? `Wali Kelas ${user.kelas} • Petugas Piket`
+                    : `Wali Kelas ${user.kelas}`;
 
                 switchTab('wali-rekap');
             }
@@ -1521,39 +1532,40 @@
             startCamera();
         }
 
-        function onQrCodeScanned(decodedText) {
+        async function handleScannedValue(rawValue) {
             if (scanCooldown || isProcessingScan) return;
+            const value = String(rawValue || '').trim();
+            if (!value) return;
             scanCooldown = true;
             isProcessingScan = true;
-
             playBeepSound();
-            processPenjemputanScan(decodedText.trim());
+            try {
+                await processPenjemputanScan(value);
+            } catch (err) {
+                console.error('Proses scan penjemputan gagal:', err);
+                showToast('Scan gagal diproses. Periksa koneksi internet dan Firebase, lalu coba lagi.', 'error');
+            } finally {
+                setTimeout(() => {
+                    scanCooldown = false;
+                    isProcessingScan = false;
+                    const inputEl = document.getElementById('hardwareScanInput');
+                    if (inputEl && !document.hidden) inputEl.focus();
+                }, 700);
+            }
+        }
 
-            setTimeout(() => {
-                scanCooldown = false;
-                isProcessingScan = false;
-            }, 2500);
+        function onQrCodeScanned(decodedText) {
+            handleScannedValue(decodedText);
         }
 
         const hwInput = document.getElementById('hardwareScanInput');
         if (hwInput) {
-            hwInput.addEventListener('keypress', function(e) {
+            hwInput.addEventListener('keydown', function(e) {
                 if (e.key === 'Enter') {
                     e.preventDefault();
                     const val = this.value.trim();
-                    if (val && !scanCooldown) {
-                        scanCooldown = true;
-                        isProcessingScan = true;
-                        playBeepSound();
-                        processPenjemputanScan(val);
-                        this.value = '';
-                        setTimeout(() => { 
-                            scanCooldown = false; 
-                            isProcessingScan = false;
-                            const inputEl = document.getElementById('hardwareScanInput');
-                            if (inputEl) inputEl.focus();
-                        }, 2000);
-                    }
+                    this.value = '';
+                    if (val) handleScannedValue(val);
                 }
             });
         }
@@ -1594,7 +1606,7 @@
             }
 
             const currentUser = JSON.parse(sessionStorage.getItem('e_user') || '{}');
-            const petugasName = currentUser.name || 'Petugas Piket';
+            const petugasName = currentUser.petugasName || currentUser.name || 'Petugas Piket';
             const scanAtMs = Date.now();
             const scanDate = new Date(scanAtMs);
             const timestamp = scanDate.toISOString();
@@ -1785,7 +1797,7 @@
                 tabName = 'scanner';
             } else if (savedUser.role === 'admin' && (tabName === 'wali-rekap')) {
                 tabName = 'kelas';
-            } else if (savedUser.role === 'walikelas' && tabName !== 'wali-rekap') {
+            } else if (savedUser.role === 'walikelas' && tabName !== 'wali-rekap' && !(savedUser.canScan && tabName === 'scanner')) {
                 tabName = 'wali-rekap';
             }
 
